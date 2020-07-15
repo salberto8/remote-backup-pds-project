@@ -1,6 +1,6 @@
 # progetto-pds
 
-#librerie usate
+# librerie usate
 - boost (completo)
 - nlohmann/json
 - openssl
