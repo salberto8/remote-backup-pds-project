@@ -1,7 +1,7 @@
 # progetto-pds
 
 # librerie usate
-- boost (completo)
+- boost (completo bisogna fare la build almeno di program_options)
 - nlohmann/json
-- openssl
+- openssl (sudo apt install libssl-dev)
 - https://github.com/Thalhammer/jwt-cpp
