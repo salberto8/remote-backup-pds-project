@@ -150,7 +150,7 @@ void handle_request(
                 return send(forbidden_response("Token needed"));
             }
             std::string token = auth.to_string();
-            std::optional<std::string> user = verifyJwt(token);
+            std::optional<std::string> user = verifyToken(token);
             if (!user.has_value()) {
                 //invalid token
                 return send(forbidden_response("Invalid token"));
@@ -206,7 +206,7 @@ void handle_request(
             }
 
             std::string token = auth.to_string();
-            std::optional<std::string> user = verifyJwt(token);
+            std::optional<std::string> user = verifyToken(token);
 
             if (!user.has_value()) {
                 //invalid token

@@ -3,8 +3,8 @@
 //
 
 #include "backup.h"
+#include "configuration.h"
 
-std::string BASE_PATH;
 
 std::optional<std::string> get_file_digest(std::string path, std::string user) {
 
@@ -23,7 +23,7 @@ std::optional<std::string> get_file_digest(std::string path, std::string user) {
 }
 
 bool save_file(const std::string &filename, const std::string &user, std::unique_ptr<char[]> &&raw_file, std::size_t n) {
-    std::string path = BASE_PATH + user + "/" + filename;
+    std::string path = configuration::backuppath + user + "/" + filename;
     std::ofstream file(path, std::ios::out|std::ios::binary|std::ios::trunc);
     if(file.is_open()){
         file.write(raw_file.get(),n);

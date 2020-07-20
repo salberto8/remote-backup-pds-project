@@ -28,7 +28,6 @@ namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 
-extern std::string BASE_PATH;
 
 std::optional<std::string> get_file_digest(std::string path, std::string user);
 

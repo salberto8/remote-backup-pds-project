@@ -16,10 +16,10 @@ add_executable(server
         main.cpp
         server.cpp
         server.h
-        Session.h)
+        Session.h dao.h configuration.cpp configuration.h dao.cpp)
 
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-target_link_libraries(server Threads::Threads crypto boost_program_options)
+target_link_libraries(server Threads::Threads crypto boost_program_options sqlite3)
 

@@ -8,7 +8,7 @@ if(len(sys.argv) != 2):
 	print("Usage: " + sys.argv[0] + " input")
 	exit(-1)
 
-f = open(sys.arcv[1],'rw')
+f = open(sys.argv[1],'rb')
 encodedfile = base64.b64encode(f.read()).decode()
 
 
@@ -17,7 +17,7 @@ body = {'filename': 'provapy',
 
 
 #token for 'user0' signed with secret.txt 
-token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoidXNlcjAifQ.WJ8sE4vIBp2SOpsZlXVFPTMtQa8jdhfPme4FBQhrTUs'
+token = 'aaa'
 
 headers = {'content-type': 'application/json',
 			'Authorization' : token}
