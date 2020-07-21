@@ -18,7 +18,6 @@ std::optional<std::string> Dao::getUserFromToken(const std::string &token) {
         return {};
 
 
-
     //  Bind-parameter indexing is 1-based.
     rc = sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr); // Bind first parameter.
 
@@ -31,7 +30,7 @@ std::optional<std::string> Dao::getUserFromToken(const std::string &token) {
             return result;
     }
 
-    rc = sqlite3_finalize( stmt );
+    sqlite3_finalize( stmt );
     return {};
 }
 

@@ -156,8 +156,6 @@ void handle_request(
                 return send(forbidden_response("Invalid token"));
             }
 
-
-
             std::optional<std::string> digest_opt = get_file_digest(path,user.value());
 
             if(digest_opt){
