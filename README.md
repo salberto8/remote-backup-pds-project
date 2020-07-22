@@ -3,7 +3,8 @@
 ## Server
 ### API
 All the APIs require authorization with a token (in the authorization header).
-Without a valid token -> 403 FORBIDDEN 
+Without a valid token -> 403 FORBIDDEN  
+See examples in test_server folder
 - GET /probefile/{filepath}
   - file exists: return the digest (SHA256) of the file (200 OK)
   - file doesn't exist: 404 NOT FOUND
