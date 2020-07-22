@@ -5,18 +5,16 @@ import sys
 
 
 if(len(sys.argv) != 2):
-	print("Usage: " + sys.argv[0] + " input")
+	print("Usage: " + sys.argv[0] + " folderpath")
 	exit(-1)
 
-f = open(sys.argv[1],'rb')
-encodedfile = base64.b64encode(f.read()).decode()
 
 
-body = {'filename': 'provapy',
-	'encodedfile': encodedfile}
+body = {'path': sys.argv[1],
+	'type': 'folder'}
 
 
-#token for 'user0' signed with secret.txt 
+#token for 'user0'
 token = 'aaa'
 
 headers = {'content-type': 'application/json',

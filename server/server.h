@@ -23,7 +23,6 @@
 #include <nlohmann/json.hpp>
 
 
-
 #include "backup.h"
 #include "authorization.h"
 
@@ -33,7 +32,6 @@ namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 using json = nlohmann::json;
 namespace base64 = boost::beast::detail::base64;
-
 
 // Report a failure
 void fail(beast::error_code ec, const std::string  &what);
@@ -132,35 +130,34 @@ void handle_request(
 
     // Make sure we can handle the method
     if( req.method() != http::verb::get &&
-        req.method() != http::verb::post)
+        req.method() != http::verb::post &&
+        req.method() != http::verb::delete_)
         return send(bad_request("Unknown HTTP-method"));
 
 
-    if(req.method() == http::verb::get) {
+        if(req.method() == http::verb::get) {
         std::string path = req.target().to_string();
 
+        //check if authorized
+        auto auth = req[http::field::authorization];
+        if(auth.empty()){
+            return send(forbidden_response("Token needed"));
+        }
+        std::string token = auth.to_string();
+        std::optional<std::string> user = verifyToken(token);
+        if (!user.has_value()) {
+            //invalid token
+            return send(forbidden_response("Invalid token"));
+        }
+
         //if starts with probe
-        if (path.rfind("/probe/", 0) == 0) {
-            path = path.substr(7);
-
-
-            //check if authorized
-            auto auth = req[http::field::authorization];
-            if(auth.empty()){
-                return send(forbidden_response("Token needed"));
-            }
-            std::string token = auth.to_string();
-            std::optional<std::string> user = verifyToken(token);
-            if (!user.has_value()) {
-                //invalid token
-                return send(forbidden_response("Invalid token"));
-            }
+        if (path.rfind("/probefile/", 0) == 0) {
+            path = path.substr(11);
 
             std::optional<std::string> digest_opt = get_file_digest(path,user.value());
 
             if(digest_opt){
                 //file exists
-
                 std::string digest = digest_opt.value();
                 http::response<http::string_body> res{
                         http::status::ok,
@@ -176,16 +173,20 @@ void handle_request(
                 return send(not_found());
             }
         }
-        /*
-        http::response<http::string_body> res{
-                http::status::ok,
-                req.version(),
-                std::string("aeiouy")};
-        res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-        res.set(http::field::content_type, "eeeeeh?");
-        res.content_length(6);
-        res.keep_alive(req.keep_alive());
-         */
+
+        if (path.rfind("/probefolder/", 0) == 0) {
+            path = path.substr(13);
+
+            bool res = probe_directory(user.value(),path);
+
+            if(res){
+                //folder exists
+                return send(okay_response());
+            } else {
+                //folder not found
+                return send(not_found());
+            }
+        }
 
         return send(not_found());
     }
@@ -193,10 +194,10 @@ void handle_request(
 
 
     if(req.method() == http::verb::post) {
-        std::string path = req.target().to_string();
+        std::string req_path = req.target().to_string();
 
         //if starts with backup
-        if (path.rfind("/backup", 0) == 0){
+        if (req_path.rfind("/backup", 0) == 0){
 
             auto auth = req[http::field::authorization];
             if(auth.empty()){
@@ -216,35 +217,100 @@ void handle_request(
             json j = json::parse(req.body());
 
 
-            std::string filename;
-            std::string encodedfile;
+            std::string path;
+            std::string type;
             try{
-                 filename = j.at("filename");
-                 encodedfile = j.at("encodedfile");
+                 path = j.at("path");
+                 type = j.at("type");
             }catch(json::out_of_range& e){
                 //missing parameters
                 return send(bad_request("Missing parameters"));
             }
 
-            if(filename.find("..")!=std::string::npos)
-                return send(bad_request("Bad file path"));
+            //avoid path traversal
+            if(path.find("..")!=std::string::npos)
+                return send(bad_request("Bad path"));
 
 
+            if(type == "file") {
+                std::string encodedfile;
+                try{
+                    encodedfile = j.at("encodedfile");
+                }catch(json::out_of_range& e){
+                    //missing parameters
+                    return send(bad_request("Missing parameters"));
+                }
 
-            //should check if valid base64?
 
-            std::size_t max_l = base64::decoded_size(encodedfile.size());
-            std::unique_ptr<char[]> raw_file{new char[max_l]};
-            std::pair<std::size_t, std::size_t> res = base64::decode(raw_file.get(),encodedfile.c_str(),encodedfile.size());
-            if (save_file(filename,user.value(),std::move(raw_file),res.first)) {
-                std::cout << user.value() << "/" << filename << std::endl;
-                return send(okay_response());
-            } else
-                return send(server_error("Impossible save the file, retry"));
+                //should check if valid base64?
+
+                std::size_t max_l = base64::decoded_size(encodedfile.size());
+                std::unique_ptr<char[]> raw_file{new char[max_l]};
+                std::pair<std::size_t, std::size_t> res = base64::decode(raw_file.get(), encodedfile.c_str(), encodedfile.size());
+
+                if (save_file(path, user.value(), std::move(raw_file), res.first)) {
+                    std::cout << user.value() << "/" << path << std::endl;
+                    return send(okay_response());
+                } else
+                    return send(server_error("Impossible save the file, retry"));
+
+            } else if (type == "folder"){
+                if(new_directory(user.value(),path)){
+                    std::cout << user.value() << "/" << path << std::endl;
+                    return send(okay_response());
+                } else {
+                    return send(server_error("Impossible create the folder"));
+                }
+            } else {
+                return send(bad_request("Illegal type"));
+            }
         }
 
         return send(bad_request("Illegal request"));
     }
+
+
+
+
+
+    //DELETE
+    if (req.method() == http::verb::delete_){
+        std::string req_path = req.target().to_string();
+
+
+
+        auto auth = req[http::field::authorization];
+        if(auth.empty()){
+            return send(forbidden_response("Token needed"));
+        }
+
+        std::string token = auth.to_string();
+        std::optional<std::string> user = verifyToken(token);
+
+        if (!user.has_value()) {
+            //invalid token
+            return send(forbidden_response("Invalid token"));
+        }
+
+
+
+        //if starts with backup
+        if (req_path.rfind("/backup/", 0) == 0){
+            std::string path = req_path.substr(8);
+
+            //avoid path traversal
+            if(path.find("..")!=std::string::npos)
+                return send(bad_request("Bad path"));
+
+            if(backup_delete(user.value(),path))
+                return send(okay_response());
+            else
+                return send(not_found());
+        }
+
+        return send(bad_request("Illegal request"));
+    }
+
 
     /*
     // Request path must be absolute and not contain "..".

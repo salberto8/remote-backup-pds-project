@@ -6,15 +6,19 @@
 #include "configuration.h"
 
 #include <openssl/evp.h>
+#include <boost/filesystem.hpp>
+
+
+namespace fs = boost::filesystem;
 
 
 
-#define BUF_SIZE 1024
+#define BUF_SIZE 2048
 
 
-std::optional<std::string> get_file_digest(std::string path, std::string user) {
+std::optional<std::string> get_file_digest(const std::string& file_path, const std::string &user) {
 
-    path = configuration::backuppath + user + "/" + path;
+    std::string path = configuration::backuppath + user + "/" + file_path;
 
 
     EVP_MD_CTX *md;
@@ -55,18 +59,8 @@ std::optional<std::string> get_file_digest(std::string path, std::string user) {
     std::string digest(hex_digest);
 
     return digest;
-
-
-
-    if(path == "user0/fileprova.txt"){
-        return "a883dafc480d466ee04e0d6da986bd78eb1fdd2178d04693723da3a8f95d42f4";
-    }
-    if(path == "user0/fileprova2"){
-        return "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865";
-    }
-
-    return {};
 }
+
 
 bool save_file(const std::string &filename, const std::string &user, std::unique_ptr<char[]> &&raw_file, std::size_t n) {
     std::string path = configuration::backuppath + user + "/" + filename;
@@ -77,4 +71,24 @@ bool save_file(const std::string &filename, const std::string &user, std::unique
         return true;
     } else
         return false;
+}
+
+bool new_directory(const std::string& user, const std::string& path){
+    return fs::create_directory(configuration::backuppath + user+"/"+path);
+}
+
+bool probe_directory(const std::string& user, const std::string& path){
+    return fs::is_directory(configuration::backuppath + user+"/"+path);
+}
+
+bool backup_delete(const std::string& user, const std::string& path){
+    std::string abs_path = configuration::backuppath + user+"/"+path;
+
+    if (fs::is_directory(abs_path)){
+        return fs::remove_all(abs_path) > 0; //recursive elimination!
+    }
+    if (fs::is_regular_file(abs_path)){
+        return fs::remove(abs_path);
+    }
+    return false;
 }
