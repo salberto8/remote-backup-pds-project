@@ -11,11 +11,11 @@ Without a valid token -> 403 FORBIDDEN
   - folder exists: 200 OK
   - folder doesn't exist: 404 NOT FOUND
 - POST /backup  
-..send a json body with path, type ('file' or 'folder'), encodedfile (if is of type file)
+  send a json body with path, type ('file' or 'folder'), encodedfile (if is of type file)
   - file/folder saved: 200 OK
   - error otherwise (BAD REQUEST or SERVER ERROR)
 - DELETE /backup/{path}  
-..remove the file or folder in the specified path (if it's a folder remove RECURSIVELY)
+  remove the file or folder in the specified path (if it's a folder remove RECURSIVELY)
   - file/folder removed: 200 OK
   - file/folder not foud: 404 NOT FOUND
   
