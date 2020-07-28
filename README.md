@@ -11,8 +11,8 @@ See examples in test_server folder
 - GET /probefolder/{folderpath}
   - folder exists: 200 OK
   - folder doesn't exist: 404 NOT FOUND
-- POST /backup  
-  send a json body with path, type ('file' or 'folder'), encodedfile (if is of type file)
+- POST /backup/{path} 
+  send a json body with type ('file' or 'folder'), encodedfile (if is of type file) in base64
   - file/folder saved: 200 OK
   - error otherwise (BAD REQUEST or SERVER ERROR)
 - DELETE /backup/{path}  

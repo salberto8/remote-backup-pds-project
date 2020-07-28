@@ -197,7 +197,9 @@ void handle_request(
         std::string req_path = req.target().to_string();
 
         //if starts with backup
-        if (req_path.rfind("/backup", 0) == 0){
+        if (req_path.rfind("/backup/", 0) == 0){
+
+            std::string path = req_path.substr(8);
 
             auto auth = req[http::field::authorization];
             if(auth.empty()){
@@ -217,10 +219,9 @@ void handle_request(
             json j = json::parse(req.body());
 
 
-            std::string path;
             std::string type;
             try{
-                 path = j.at("path");
+                 //path = j.at("path");
                  type = j.at("type");
             }catch(json::out_of_range& e){
                 //missing parameters
