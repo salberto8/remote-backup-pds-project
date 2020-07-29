@@ -20,6 +20,8 @@ std::optional<std::string> get_file_digest(const std::string& file_path, const s
 
     std::string path = configuration::backuppath + user + "/" + file_path;
 
+    if(!fs::is_regular_file(path))
+        return {};
 
     EVP_MD_CTX *md;
     unsigned char md_value[EVP_MAX_MD_SIZE];
@@ -74,7 +76,7 @@ bool save_file(const std::string &filename, const std::string &user, std::unique
 }
 
 bool new_directory(const std::string& user, const std::string& path){
-    return fs::create_directory(configuration::backuppath + user+"/"+path);
+    return fs::create_directory(configuration::backuppath + user + "/" + path);
 }
 
 bool probe_directory(const std::string& user, const std::string& path){

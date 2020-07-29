@@ -10,8 +10,7 @@ if(len(sys.argv) != 2):
 
 
 
-body = {'path': sys.argv[1],
-	'type': 'folder'}
+body = {'type': 'folder'}
 
 
 #token for 'user0'
@@ -20,7 +19,8 @@ token = 'aaa'
 headers = {'content-type': 'application/json',
 			'Authorization' : token}
 
-myurl = "http://127.0.0.1:12345/backup/"
+myurl = "http://127.0.0.1:12345/backup/"+sys.argv[1]
+
 req = requests.post(myurl,json=body,headers=headers)
 
 print(req)

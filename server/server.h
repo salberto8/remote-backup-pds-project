@@ -199,7 +199,7 @@ void handle_request(
         //if starts with backup
         if (req_path.rfind("/backup/", 0) == 0){
 
-            std::string path = req_path.substr(8);
+            const std::string path = req_path.substr(8);
 
             auto auth = req[http::field::authorization];
             if(auth.empty()){
