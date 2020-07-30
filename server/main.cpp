@@ -1,4 +1,5 @@
 #include <iostream>
+#include <pwd.h>
 
 #include "Listener.h"
 #include "configuration.h"
@@ -6,7 +7,13 @@
 
 int main() {
 
-    const std::string conf_path = "/home/stealbi/Desktop/testpds/backupserver.conf";
+    std::string home_dir;
+    if ((getenv("HOME")) != NULL)
+        home_dir = (getenv("HOME"));
+    else
+        home_dir = getpwuid(getuid())->pw_dir;
+
+    const std::string conf_path = home_dir + "/backupserver.conf";
 
     if(!configuration::load_config_file(conf_path)){
         return -1;
