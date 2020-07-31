@@ -134,8 +134,8 @@ void handle_request(
         req.method() != http::verb::delete_)
         return send(bad_request("Unknown HTTP-method"));
 
-
-        if(req.method() == http::verb::get) {
+    // GET
+    if(req.method() == http::verb::get) {
         std::string path = req.target().to_string();
 
         //check if authorized
@@ -154,7 +154,7 @@ void handle_request(
         if (path.rfind("/probefile/", 0) == 0) {
             path = path.substr(11);
 
-            std::optional<std::string> digest_opt = get_file_digest(path,user.value());
+            std::optional<std::string> digest_opt = get_file_digest(user.value(), path);
 
             if(digest_opt){
                 //file exists
@@ -191,8 +191,7 @@ void handle_request(
         return send(not_found());
     }
 
-
-
+    // POST
     if(req.method() == http::verb::post) {
         std::string req_path = req.target().to_string();
 
@@ -249,7 +248,7 @@ void handle_request(
                 std::unique_ptr<char[]> raw_file{new char[max_l]};
                 std::pair<std::size_t, std::size_t> res = base64::decode(raw_file.get(), encodedfile.c_str(), encodedfile.size());
 
-                if (save_file(path, user.value(), std::move(raw_file), res.first)) {
+                if (save_file(user.value(), path, std::move(raw_file), res.first)) {
                     std::cout << user.value() << "/" << path << std::endl;
                     return send(okay_response());
                 } else
@@ -270,15 +269,9 @@ void handle_request(
         return send(bad_request("Illegal request"));
     }
 
-
-
-
-
     //DELETE
     if (req.method() == http::verb::delete_){
         std::string req_path = req.target().to_string();
-
-
 
         auto auth = req[http::field::authorization];
         if(auth.empty()){
@@ -292,7 +285,6 @@ void handle_request(
             //invalid token
             return send(forbidden_response("Invalid token"));
         }
-
 
 
         //if starts with backup
