@@ -34,7 +34,7 @@ int main() {
     // FileWatcher refer to a path with a time interval at which we check for changes
     FileWatcher fw{configuration::backup_path, std::chrono::milliseconds(5000)};
 
-    fw.start();
+    //fw.start();
 
 
 
@@ -52,9 +52,9 @@ int main() {
         stream.connect(tcp::endpoint( configuration::address, configuration::port));
 
         // Set up an HTTP GET request message
-        http::request<http::string_body> req{http::verb::get, "http://127.0.0.1:12345/probefolder/prova", 1.1};
+        http::request<http::string_body> req{http::verb::get, "/probefolder/p", 11};
         req.set(http::field::authorization, "aaa");
-        req.set(http::field::host, "127.0.0.1:12345");
+        //req.set(http::field::host, "127.0.0.1:12345");
         req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
         // Send the HTTP request to the remote host
