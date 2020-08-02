@@ -27,7 +27,7 @@ int main() {
     }
 
     // FileWatcher refer to a path with a time interval at which we check for changes
-    FileWatcher fw{configuration::backup_path, std::chrono::milliseconds(5000)};
+    FileWatcher fw{configuration::backup_path, std::chrono::milliseconds(5000), &stream};
     // thread for the FileWatcher
     std::thread thread_fw(&FileWatcher::start, &fw);
 

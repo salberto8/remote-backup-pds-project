@@ -4,10 +4,22 @@
 
 #include "FileWatcher.h"
 
-FileWatcher::FileWatcher(const std::string& path_to_watch, std::chrono::duration<int, std::milli> delay) : path_to_watch{path_to_watch}, delay{delay} {
-    for(auto &file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
-        // check if the file/folder exists in the server
+FileWatcher::FileWatcher(const std::string& path_to_watch, std::chrono::duration<int, std::milli> delay, beast::tcp_stream *stream)
+    : path_to_watch{path_to_watch}, delay{delay}, client(reinterpret_cast<beast::tcp_stream &>(stream)) {
 
+    for(auto &file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
+        // check if the file/folder exists in the server, if not send it
+        if(file.is_directory()) {
+            if(!client.probe_directory(file.path().string())) {
+                client.new_directory(file.path().string());
+            }
+        }
+/*        else if(file.is_regular_file()) {
+            if(!client.probe_file(file)) {
+                //creo la copia sul server
+                client.save_file(file);
+            }
+        }*/
 
         // add the file/folder to the paths_ unordered_map
         paths_[file.path().string()] = std::filesystem::last_write_time(file);
