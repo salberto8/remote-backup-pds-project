@@ -11,6 +11,9 @@
 #include <filesystem>
 #include <unordered_map>
 
+#include "Client.h"
+
+
 enum class FileStatus {created, modified, erased};
 
 class FileWatcher {

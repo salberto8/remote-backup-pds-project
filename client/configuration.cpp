@@ -2,9 +2,10 @@
 // Created by giacomo on 31/07/20.
 //
 
-#include <boost/program_options.hpp>
-#include <fstream>
 #include <iostream>
+#include <pwd.h>
+#include <fstream>
+#include <boost/program_options.hpp>
 
 #include "configuration.h"
 
@@ -18,7 +19,18 @@ namespace configuration
     std::string backup_path;
 }
 
-bool configuration::load_config_file(const std::string &conf_path) {
+
+
+bool configuration::load_config_file(const std::string &config_file) {
+    std::string home_dir;
+    if ((getenv("HOME")) != NULL)
+        home_dir = (getenv("HOME"));
+    else
+        home_dir = getpwuid(getuid())->pw_dir;
+
+    const std::string conf_path = home_dir + "/" + config_file;
+
+
     std::ifstream conf_file {conf_path};
 
     if(!conf_file){

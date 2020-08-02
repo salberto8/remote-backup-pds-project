@@ -17,7 +17,7 @@ namespace configuration
     extern short unsigned port;
     extern std::string backup_path;
 
-    bool load_config_file(const std::string &conf_path);
+    bool load_config_file(const std::string &config_file);
 }
 
 
