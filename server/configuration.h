@@ -19,7 +19,7 @@ namespace configuration
     extern std::string backuppath;
     extern std::string dbpath;
 
-    bool load_config_file(const std::string &conf_path);
+    bool load_config_file(const std::string &config_file);
 }
 
 

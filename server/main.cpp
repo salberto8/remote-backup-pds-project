@@ -1,5 +1,4 @@
 #include <iostream>
-#include <pwd.h>
 
 #include "Listener.h"
 #include "configuration.h"
@@ -7,21 +6,10 @@
 
 int main() {
 
-    std::string home_dir;
-    if ((getenv("HOME")) != NULL)
-        home_dir = (getenv("HOME"));
-    else
-        home_dir = getpwuid(getuid())->pw_dir;
-
-    const std::string conf_path = home_dir + "/backupserver.conf";
-
-    if(!configuration::load_config_file(conf_path)){
-        return -1;
+    // load the config file
+    if(!configuration::load_config_file("backupserver.conf")){
+        return EXIT_FAILURE;
     }
-
-
-
-
 
     // The io_context is required for all I/O
     net::io_context ioc{configuration::nthreads};
