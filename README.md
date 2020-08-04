@@ -8,8 +8,11 @@ See examples in test_server folder
 - GET /probefile/{filepath}
   - file exists: return the digest (SHA256) of the file (200 OK)
   - file doesn't exist: 404 NOT FOUND
-- GET /probefolder/{folderpath}
-  - folder exists: 200 OK
+- POST /probefolder/{folderpath}
+  send a json with 'children', an array with all the (direct) children of the folder
+  - folder exists: 
+    - check if there are files/folders not in 'children' and remove it
+    - answer with 200 OK
   - folder doesn't exist: 404 NOT FOUND
 - POST /backup/{path} 
   send a json body with type ('file' or 'folder'), encodedfile (if is of type file) in base64

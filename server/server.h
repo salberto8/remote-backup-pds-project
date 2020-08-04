@@ -135,7 +135,8 @@ void handle_request(
         return send(bad_request("Unknown HTTP-method"));
 
 
-        if(req.method() == http::verb::get) {
+
+    if(req.method() == http::verb::get) {
         std::string path = req.target().to_string();
 
         //check if authorized
@@ -174,6 +175,8 @@ void handle_request(
             }
         }
 
+
+        /*
         if (path.rfind("/probefolder/", 0) == 0) {
             path = path.substr(13);
 
@@ -187,6 +190,7 @@ void handle_request(
                 return send(not_found());
             }
         }
+         */
 
         return send(not_found());
     }
@@ -196,28 +200,32 @@ void handle_request(
     if(req.method() == http::verb::post) {
         std::string req_path = req.target().to_string();
 
+        //check if authorized
+        auto auth = req[http::field::authorization];
+        if(auth.empty()){
+            return send(forbidden_response("Token needed"));
+        }
+        std::string token = auth.to_string();
+        std::optional<std::string> user = verifyToken(token);
+        if (!user.has_value()) {
+            //invalid token
+            return send(forbidden_response("Invalid token"));
+        }
+
+
+        //avoid path traversal
+        if(req_path.find("..")!=std::string::npos)
+            return send(bad_request("Bad path"));
+
+
+
+
+
         //if starts with backup
         if (req_path.rfind("/backup/", 0) == 0){
-
             const std::string path = req_path.substr(8);
 
-            auto auth = req[http::field::authorization];
-            if(auth.empty()){
-                return send(forbidden_response("Token needed"));
-            }
-
-            std::string token = auth.to_string();
-            std::optional<std::string> user = verifyToken(token);
-
-            if (!user.has_value()) {
-                //invalid token
-                return send(forbidden_response("Invalid token"));
-            }
-
-
-
             json j = json::parse(req.body());
-
 
             std::string type;
             try{
@@ -228,9 +236,6 @@ void handle_request(
                 return send(bad_request("Missing parameters"));
             }
 
-            //avoid path traversal
-            if(path.find("..")!=std::string::npos)
-                return send(bad_request("Bad path"));
 
 
             if(type == "file") {
@@ -264,6 +269,33 @@ void handle_request(
                 }
             } else {
                 return send(bad_request("Illegal type"));
+            }
+        }
+
+
+        if (req_path.rfind("/probefolder/", 0) == 0) {
+            std::string path = req_path.substr(13);
+
+            json j = json::parse(req.body());
+
+            std::set<std::string> children;
+            try{
+                //path = j.at("path");
+                j.at("children").get_to(children);
+            }catch(json::exception & e){
+                //missing parameters
+                return send(bad_request("Bad request body"));
+            }
+
+
+            bool res = probe_directory(user.value(),path,children);
+
+            if(res){
+                //folder exists
+                return send(okay_response());
+            } else {
+                //folder not found
+                return send(not_found());
             }
         }
 

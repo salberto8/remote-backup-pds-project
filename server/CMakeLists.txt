@@ -21,5 +21,5 @@ add_executable(server
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-target_link_libraries(server Threads::Threads crypto boost_program_options sqlite3 boost_filesystem)
+target_link_libraries(server Threads::Threads crypto boost_program_options sqlite3 stdc++fs)
 

@@ -15,8 +15,10 @@ token = 'aaa'
 
 headers = {'Authorization' : token}
 
+body = {'children' : ['aaa','bbb','folder1']}
+
 myurl = "http://127.0.0.1:12345/probefolder/" + sys.argv[1]
-req = requests.get(myurl,headers=headers)
+req = requests.post(myurl,headers=headers,json=body)
 
 print(req)
 print(req.text)

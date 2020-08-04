@@ -20,6 +20,8 @@
 #include <thread>
 #include <vector>
 #include <fstream>
+#include <set>
+
 
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -37,7 +39,7 @@ bool backup_delete(const std::string& user, const std::string& path);
 
 bool save_file(const std::string &filename,const std::string &user,std::unique_ptr<char []> &&raw_file,std::size_t n);
 bool new_directory(const std::string& user, const std::string& path);
-bool probe_directory(const std::string& user, const std::string& path);
+bool probe_directory(const std::string& user, const std::string& path, const std::set<std::string>& children);
 
 
 #endif //SERVER_PROGETTO_BACKUP_H

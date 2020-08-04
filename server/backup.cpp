@@ -6,10 +6,9 @@
 #include "configuration.h"
 
 #include <openssl/evp.h>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
-
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 
 
@@ -79,9 +78,35 @@ bool new_directory(const std::string& user, const std::string& path){
     return fs::create_directory(configuration::backuppath + user + "/" + path);
 }
 
-bool probe_directory(const std::string& user, const std::string& path){
-    return fs::is_directory(configuration::backuppath + user+"/"+path);
+
+
+
+bool probe_directory(const std::string& user, const std::string& path, const std::set<std::string> & children){
+    std::string abs_path = configuration::backuppath + user+"/"+path;
+    if(!fs::is_directory(abs_path))
+        return false;
+
+    fs::directory_iterator end_itr;
+    for (fs::directory_iterator itr(abs_path); itr!=end_itr; ++itr){
+        const std::string filename = itr->path().filename();
+        const std::string file_path = itr->path();
+
+        //check if the file is still present in the client
+        if(children.count(filename)==0){
+            //remove file/directory
+            if (fs::is_directory(file_path)) {
+                fs::remove_all(file_path); //recursive elimination!
+            } else {
+                fs::remove(file_path);
+            }
+        }
+    }
+
+    return true;
 }
+
+
+
 
 bool backup_delete(const std::string& user, const std::string& path){
     std::string abs_path = configuration::backuppath + user+"/"+path;
