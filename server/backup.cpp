@@ -74,11 +74,6 @@ std::optional<std::string> get_file_digest(const std::string &user, const std::s
 }
 
 
-bool probe_directory(const std::string& user, const std::string& path){
-    return fs::is_directory(configuration::backuppath + user+"/"+path);
-}
-
-
 bool new_directory(const std::string& user, const std::string& path){
     return fs::create_directory(configuration::backuppath + user + "/" + path);
 }
