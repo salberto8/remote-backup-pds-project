@@ -1,6 +1,18 @@
 # progetto-pds
 
 ## Server
+### Configuration
+Before the first start you should create a config file called backupserver.conf in your home directory.
+Here is an example:
+
+```
+address=127.0.0.1
+port=12345
+nthreads=4
+backuppath=/home/user/Desktop/test_server/
+dbpath=/home/user/Desktop/test_server/backup.db
+```
+
 ### API
 All the APIs require authorization with a token (in the authorization header).
 Without a valid token -> 403 FORBIDDEN  
@@ -27,4 +39,4 @@ See examples in test_server folder
 - boost (completo bisogna fare la build almeno di program_options e filesystem)
 - nlohmann/json
 - openssl (apt install libssl-dev)
-- sqlite (apt instal libsqlite3-dev)
+- sqlite (apt install libsqlite3-dev)

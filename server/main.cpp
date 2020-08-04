@@ -6,15 +6,10 @@
 
 int main() {
 
-    const std::string conf_path = "/home/stealbi/Desktop/testpds/backupserver.conf";
-
-    if(!configuration::load_config_file(conf_path)){
-        return -1;
+    // load the config file
+    if(!configuration::load_config_file("backupserver.conf")){
+        return EXIT_FAILURE;
     }
-
-
-
-
 
     // The io_context is required for all I/O
     net::io_context ioc{configuration::nthreads};
