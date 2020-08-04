@@ -14,8 +14,8 @@ namespace po = boost::program_options;
 
 namespace configuration
 {
-    net::ip::address address;
-    short unsigned port;
+    std::string address;
+    std::string port;
     std::string backup_path;
 }
 
@@ -41,7 +41,7 @@ bool configuration::load_config_file(const std::string &config_file) {
     po::options_description desc("Allowed options");
     desc.add_options()
             ("address", "host address")
-            ("port", po::value<unsigned short>(), "host port")
+            ("port", "host port")
             ("backup_path", "path where you want the backup done")
             ;
 
@@ -50,8 +50,8 @@ bool configuration::load_config_file(const std::string &config_file) {
     //po::notify(vm);
 
     try {
-        configuration::address = net::ip::make_address(vm["address"].as<std::string>());
-        configuration::port = vm["port"].as<unsigned short>();
+        configuration::address = vm["address"].as<std::string>();
+        configuration::port = vm["port"].as<std::string>();
         configuration::backup_path = vm["backup_path"].as<std::string>();
     } catch(boost::bad_any_cast & e){
         std::cerr << "Bad configuration file, usage:\n" << desc << std::endl;

@@ -7,14 +7,14 @@
 
 
 #include <string>
-#include <boost/asio.hpp>
+//#include <boost/asio.hpp>
 
-namespace net = boost::asio;
+//namespace net = boost::asio;
 
 namespace configuration
 {
-    extern net::ip::address address;
-    extern short unsigned port;
+    extern std::string address;
+    extern std::string port;
     extern std::string backup_path;
 
     bool load_config_file(const std::string &config_file);

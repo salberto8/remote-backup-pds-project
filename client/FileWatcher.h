@@ -11,21 +11,20 @@
 #include <filesystem>
 #include <unordered_map>
 
-#include "Client.h"
+#include "client.h"
 
 
 enum class FileStatus {created, modified, erased};
 
 class FileWatcher {
 public:
-    FileWatcher(const std::string& path_to_watch, std::chrono::duration<int, std::milli> delay, beast::tcp_stream *stream);
+    FileWatcher(const std::string& path_to_watch, std::chrono::duration<int, std::milli> delay);
 
     void start();
 
 private:
     std::string path_to_watch;
     std::chrono::duration<int, std::milli> delay;
-    Client client;
 
     // unordered_map: path of the file and its last modification time
     std::unordered_map<std::string, std::filesystem::file_time_type> paths_;
