@@ -35,6 +35,17 @@ See examples in test_server folder
   - file/folder removed: 200 OK
   - file/folder not foud: 404 NOT FOUND
   
+## Client
+### Configuration
+Before the first start you should create a config file called backup.conf in your home directory.
+Here is an example:
+
+```
+address=127.0.0.1
+port=12345
+backup_path=/home/giacomo/Downloads
+```
+  
 ### librerie usate nel server
 - boost (completo bisogna fare la build almeno di program_options e filesystem)
 - nlohmann/json
