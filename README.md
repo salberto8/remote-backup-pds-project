@@ -43,7 +43,7 @@ Here is an example:
 ```
 address=127.0.0.1
 port=12345
-backup_path=/home/giacomo/Downloads
+backup_path=/home/user/Downloads
 ```
   
 ### librerie usate nel server
