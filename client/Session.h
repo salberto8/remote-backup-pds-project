@@ -6,17 +6,32 @@
 #define CLIENT_SESSION_H
 
 
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/strand.hpp>
 #include <cstdlib>
-#include <functional>
 #include <iostream>
-#include <memory>
 #include <string>
+
 
 #include "client.h"
 #include "configuration.h"
 
-void fail(beast::error_code ec, char const* what);
+namespace beast = boost::beast;     // from <boost/beast.hpp>
+namespace http = beast::http;       // from <boost/beast/http.hpp>
+namespace net = boost::asio;        // from <boost/asio.hpp>
+using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
+
+
+// Report a failure
+void
+fail(beast::error_code ec, char const* what)
+{
+    std::cerr << what << ": " << ec.message() << "\n";
+}
 
 
 // Performs an HTTP GET and saves the response
@@ -25,7 +40,7 @@ class Session : public std::enable_shared_from_this<Session>
     tcp::resolver resolver_;
     beast::tcp_stream stream_;
     beast::flat_buffer buffer_; // (Must persist between reads)
-    http::request<http::empty_body> req_;
+    http::request<http::string_body> req_;
     http::response<http::string_body> res_;
 
 public:
@@ -41,23 +56,22 @@ public:
     // Start the asynchronous operation
     void
     run(
-            char const* host,
-            char const* port,
-            char const* target,
-            int version)
+            http::request<http::string_body> *req
+            )
     {
-        // Set up an HTTP GET request message
-        req_.version(version);
-        req_.method(http::verb::get);
-        req_.target(target);
-        req_.set(http::field::host, host);
-        req_.set(http::field::authorization, "aaa");
+        // Set up an HTTP request message
+        req_ = std::move(*req);
+        req_.set(http::field::host, configuration::address);
+        req_.version(11);
         req_.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+
+        // authorization to be implemented
+        req_.set(http::field::authorization, "aaa");
 
         // Look up the domain name
         resolver_.async_resolve(
-                host,
-                port,
+                configuration::address,
+                configuration::port,
                 beast::bind_front_handler(
                         &Session::on_resolve,
                         shared_from_this()));
@@ -126,12 +140,7 @@ public:
             return fail(ec, "read");
 
         // Save the response
-        std::unique_lock<std::mutex> l(m);
-
-        http_status = res_.result();
-        digest = res_.body()
-        cv.notify_one();
-        l.unlock();
+        handle_response(&res_);
 
         // Gracefully close the socket
         stream_.socket().shutdown(tcp::socket::shutdown_both, ec);

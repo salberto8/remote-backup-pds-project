@@ -5,30 +5,17 @@
 #ifndef CLIENT_CLIENT_H
 #define CLIENT_CLIENT_H
 
-#include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/connect.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <filesystem>
-#include <mutex>
-#include <condition_variable>
 
-namespace beast = boost::beast;     // from <boost/beast.hpp>
-namespace http = beast::http;       // from <boost/beast/http.hpp>
-namespace net = boost::asio;        // from <boost/asio.hpp>
-using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
+//#include <mutex>
+//#include <condition_variable>
 
-extern std::mutex m;
-extern std::condition_variable cv;
-extern http::status http_status;
-extern std::string remote_digest;
+namespace http = boost::beast::http;       // from <boost/beast/http.hpp>
 
-// implementare le varie richieste HTTP
+void handle_response(http::response<http::string_body> *res);
 
-bool probe_directory(std::string path);
-bool probe_file(std::string path);
-void backup(std::string path);
+bool probe_file(const std::string& original_path);
+bool backup_file(const std::string& original_path);
 
 
 #endif //CLIENT_CLIENT_H

@@ -1,31 +1,36 @@
 //
 // Created by giacomo on 31/07/20.
 //
-#include <iostream>
+
+#include <thread>
+
 #include "FileWatcher.h"
 #include "client.h"
-#include "configuration.h"
 
 FileWatcher::FileWatcher(const std::string& path_to_watch, std::chrono::duration<int, std::milli> delay)
     : path_to_watch{path_to_watch}, delay{delay} {
 
-    for(auto &file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
-        // check if the file/folder exists in the server, if not send it
-        if(file.is_directory()) {
-            //std::cout << "path: " << file.path().string().erase(0, configuration::backup_path.length()) << std::endl;
-            if(!probe_directory(file.path().string())) {
-                backup(file.path().string());
-            }
+    for(auto &path_entry : std::filesystem::recursive_directory_iterator(path_to_watch)) {
+        // check if the file/folder exists in the server, if not, backup it
+        // check_and_backup(path_entry);
+        if(path_entry.is_directory()) {
+/*            if(!probe_folder(path_entry.path().string())) {
+                if(!backup_folder(path_entry.path().string())) {
+                    // gestire in caso di errore di connessione
+                    // si può creare una funzione nel main per controllare la connessione
+                }
+            }*/
         }
-        else if(file.is_regular_file()) {
-            if(!probe_file(file.path().string())) {
-                //creo la copia sul server
-                backup(file.path().string());
+        else if(path_entry.is_regular_file()) {
+            if(!probe_file(path_entry.path().string())) {
+                if(!backup_file(path_entry.path().string())) {
+                    // gestire in caso di errore di connessione
+                }
             }
         }
 
         // add the file/folder to the paths_ unordered_map
-        paths_[file.path().string()] = std::filesystem::last_write_time(file);
+        paths_[path_entry.path().string()] = std::filesystem::last_write_time(path_entry);
     }
 }
 

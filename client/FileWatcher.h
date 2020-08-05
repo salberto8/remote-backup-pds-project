@@ -7,11 +7,8 @@
 
 
 #include <string>
-#include <thread>
 #include <filesystem>
 #include <unordered_map>
-
-#include "client.h"
 
 
 enum class FileStatus {created, modified, erased};

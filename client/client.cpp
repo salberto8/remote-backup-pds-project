@@ -2,20 +2,21 @@
 // Created by giacomo on 03/08/20.
 //
 
-#include <iostream>
 #include <thread>
-#include <openssl/evp.h>
-#include <cstdlib>
+#include <nlohmann/json.hpp>
 
 #include "client.h"
+#include "backup.h"
 #include "configuration.h"
 #include "Session.h"
 
-std::mutex m;
-std::condition_variable cv;
-http::status http_status = http::status::unknown;
-std::string remote_digest;
 
+using json = nlohmann::json;
+
+//std::mutex m;
+//std::condition_variable cv;
+http::status http_status;
+std::string remote_digest;
 
 void replaceSpaces(std::string &str) {
 
@@ -46,105 +47,83 @@ void replaceSpaces(std::string &str) {
     }
 }
 
-std::string calculate_digest(std::string path) {
-    EVP_MD_CTX *md;
-    unsigned char md_value[EVP_MAX_MD_SIZE];
-    char hex_digest[EVP_MAX_MD_SIZE*2+1];
-    int n,i;
-    unsigned int md_len;
-    unsigned char buf[BUF_SIZE];
-    FILE * fin;
-
-    if((fin = fopen(path.c_str(),"rb")) == NULL) {
-        return {};
-    }
-
-    md = EVP_MD_CTX_new();
-    EVP_MD_CTX_init(md);
-
-    EVP_DigestInit(md, EVP_sha256());
-
-    while((n = fread(buf,1,BUF_SIZE,fin)) > 0)
-        EVP_DigestUpdate(md, buf,n);
-
-    if(EVP_DigestFinal_ex(md, md_value, &md_len) != 1) {
-        //error computing the digest
-        return {};
-    }
-
-    EVP_MD_CTX_free(md);
-
-    //convert in hex
-    for(i = 0; i < md_len; i++)
-        sprintf(hex_digest+2*i,"%02x", md_value[i]);
-
-    hex_digest[md_len*2] = 0;
-
-    std::string digest(hex_digest);
-
-    return digest;
+void handle_response(http::response<http::string_body> *res) {
+    //std::lock_guard<std::mutex> lg(m);
+    remote_digest = res->body();
+    http_status = res->result();
+    //cv.notify_one();
 }
 
-bool probe_file(std::string path) {
-    std::string original_path = path;
-    // make the relative path
-    path.erase(0, configuration::backup_path.length());
+bool probe_file(const std::string& original_path) {
+    http_status = http::status::unknown;
+    remote_digest = "";
+    http::request<http::string_body> req;
 
+    // make the relative path
+    std::string relative_path = original_path.substr(configuration::backup_path.length());
     // substitute spaces with %20
-    replaceSpaces(path);
-    char tmp[100] = "/probefile";
-    if(path.length() > 80) {
-        std::cerr << "path" << path << "too long" << std::endl;
-    }
-    strcat(tmp, path.c_str());
-    const char* target_path = tmp;
+    replaceSpaces(relative_path);
+
+    // prepare the request message
+    req.method(http::verb::get);
+    req.target("/probefile" + relative_path);
 
     net::io_context ioc;
-
     // Launch the asynchronous operation
-    std::make_shared<Session>(ioc)->run(configuration::address.c_str(), configuration::port.c_str(), target_path, 11);
-
+    std::make_shared<Session>(ioc)->run(&req);
     // Run the I/O service. The call will return when the get operation is complete.
     std::thread t_probe_file(
             [&ioc] {
                 ioc.run();
             });
-    t_probe_file.detach();
 
+    // digest calculation while waiting for the http response
     std::string local_digest = calculate_digest(original_path);
 
-    std::unique_lock<std::mutex> l(m);
-    cv.wait(l, [](){
-        return (http_status != http::status::unknown);
-    });
-    if(http_status == http::status::ok)
+    t_probe_file.join();
+
+//    std::unique_lock<std::mutex> ul(m);
+//    cv.wait(ul, [](){
+//        return (http_status != http::status::unknown);
+//    });
+    if(http_status == http::status::ok && local_digest == remote_digest)
         return true;
 
     return false;
 }
 
-void backup(std::string path) {
-    // make the relative path
-    path.erase(0, configuration::backup_path.length());
+bool backup_file(const std::string& original_path) {
+    http_status = http::status::unknown;
+    http::request<http::string_body> req;
 
+    // make the relative path
+    std::string relative_path = original_path.substr(configuration::backup_path.length());
     // substitute spaces with %20
-    replaceSpaces(path);
-    char tmp[100] = "/backup";
-    if(path.length() > 80) {
-        std::cerr << "path" << path << "too long" << std::endl;
-    }
-    strcat(tmp, path.c_str());
-    const char* target_path = tmp;
+    replaceSpaces(relative_path);
+
+    // create the encoded file
+    auto encoded_file = encode(original_path);
+
+    std::cout<< encoded_file.get()<<std::endl;
+    // prepare the request message
+    req.method(http::verb::post);
+    req.target("/backup" + relative_path);
+    req.set(http::field::content_type, "application/json");
+    json j = {
+            {"type", "file"},
+            {"encodedfile", encoded_file.get()}
+    };
+    req.body() = j.dump();
+    req.content_length(j.dump().length());
 
     net::io_context ioc;
-
     // Launch the asynchronous operation
-    std::make_shared<Session>(ioc)->run(configuration::address.c_str(), configuration::port.c_str(), target_path, 11);
-
+    std::make_shared<Session>(ioc)->run(&req);
     // Run the I/O service. The call will return when the get operation is complete.
     ioc.run();
 
-    if(http_status != http::status::ok) {
-        std::cerr << "Error: server cannot create the folder '" << path << "'" << std::endl;
-    }
+    if(http_status == http::status::ok)
+        return true;
+
+    return false;
 }
