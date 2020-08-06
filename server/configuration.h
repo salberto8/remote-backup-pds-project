@@ -12,7 +12,6 @@ namespace net = boost::asio;
 
 namespace configuration
 {
-
     extern net::ip::address address;
     extern short unsigned port;
     extern int nthreads;
