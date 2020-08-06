@@ -24,6 +24,12 @@ namespace configuration
     std::string dbpath;
 }
 
+/**
+ * read a configuration file and save the content in the configuration:: namespace
+ *
+ * @param config_file path of the configuration file
+ * @return false if parsing failed, true otherwise
+ */
 bool configuration::load_config_file(const std::string &config_file)
 {
     std::string home_dir;
