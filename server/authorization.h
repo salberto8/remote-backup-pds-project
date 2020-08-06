@@ -18,4 +18,7 @@
 // return the username if is a valid token, {} otherwise
 std::optional<std::string> verifyToken(const std::string& token);
 
+// return true if the username and password match the db
+bool verifyUserPassword(const std::string& username, const std::string& password);
+
 #endif //SERVER_PROGETTO_AUTHORIZATION_H

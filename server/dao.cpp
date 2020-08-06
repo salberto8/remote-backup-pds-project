@@ -34,6 +34,34 @@ std::optional<std::string> Dao::getUserFromToken(const std::string &token) {
     return {};
 }
 
+std::optional<std::string> Dao::getPasswordFromUser(const std::string &username){
+    if(!conn_open)
+        return {};
+
+
+    sqlite3_stmt* stmt = nullptr;
+
+    int rc = sqlite3_prepare_v2( db, "SELECT hash FROM users WHERE username = ?", -1, &stmt, 0 );
+    if ( rc != SQLITE_OK )
+        return {};
+
+
+    //  Bind-parameter indexing is 1-based.
+    rc = sqlite3_bind_text( stmt, 1, username.c_str(), username.size(), nullptr); // Bind first parameter.
+
+    rc = sqlite3_step( stmt );
+
+    if( rc  == SQLITE_ROW ) { // if query has result-rows.
+        std::string result = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+        rc = sqlite3_finalize(stmt);
+        if (rc == SQLITE_OK)
+            return result;
+    }
+
+    sqlite3_finalize( stmt );
+    return {};
+}
+
 Dao::Dao() {
     std::string path = configuration::dbpath;
 

@@ -103,7 +103,6 @@ void handle_request(
             };
 
 
-
     auto const okay_response =
             [&req]()
             {
@@ -198,6 +197,43 @@ void handle_request(
     if(req.method() == http::verb::post) {
         std::string req_path = req.target().to_string();
 
+        //login request
+        if (req_path.rfind("/login", 0) == 0){
+            json j = json::parse(req.body());
+
+            std::string username;
+            std::string password;
+
+            try {
+                username = j.at("username");
+                password = j.at("password");
+            }
+            catch (json::out_of_range& e){
+                //missing parameters
+                return send(bad_request("Missing parameters"));
+            }
+
+            if (verifyUserPassword(username, password)){
+                // the user exists and the password is verified
+
+                // create token
+                std::string token{"token"};
+                // save token related to user
+                // send token
+                http::response<http::string_body> res{
+                        http::status::ok,
+                        req.version(),
+                        token};
+                res.set(http::field::content_type, "text/plain");
+                res.content_length(token.size());
+                res.keep_alive(req.keep_alive());
+                return send(std::move(res));
+            }
+            else {
+                return send(server_error("Authentication failed"));
+            }
+        }
+
         //check if authorized
         auto auth = req[http::field::authorization];
         if(auth.empty()){
@@ -214,9 +250,6 @@ void handle_request(
         //avoid path traversal
         if(req_path.find("..")!=std::string::npos)
             return send(bad_request("Bad path"));
-
-
-
 
 
         //if starts with backup
