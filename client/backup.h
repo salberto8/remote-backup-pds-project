@@ -10,6 +10,7 @@
 
 std::string calculate_digest(std::string path);
 std::unique_ptr<char[]> encode(const std::string &original_path);
+std::set<std::string> get_children(const std::string &path);
 
 
 #endif //CLIENT_BACKUP_H

@@ -4,6 +4,7 @@
 
 #include <thread>
 #include <nlohmann/json.hpp>
+#include <set>
 
 #include "client.h"
 #include "backup.h"
@@ -47,17 +48,16 @@ void replaceSpaces(std::string &str) {
     }
 }
 
-void handle_response(http::response<http::string_body> *res) {
+/*void handle_response(http::response<http::string_body> *res) {
     //std::lock_guard<std::mutex> lg(m);
     remote_digest = res->body();
     http_status = res->result();
     //cv.notify_one();
-}
+}*/
 
 bool probe_file(const std::string& original_path) {
-    http_status = http::status::unknown;
-    remote_digest = "";
     http::request<http::string_body> req;
+    http::response<http::string_body> res;
 
     // make the relative path
     std::string relative_path = original_path.substr(configuration::backup_path.length());
@@ -70,7 +70,7 @@ bool probe_file(const std::string& original_path) {
 
     net::io_context ioc;
     // Launch the asynchronous operation
-    std::make_shared<Session>(ioc)->run(&req);
+    std::make_shared<Session>(ioc, req, res)->run();
     // Run the I/O service. The call will return when the get operation is complete.
     std::thread t_probe_file(
             [&ioc] {
@@ -86,15 +86,15 @@ bool probe_file(const std::string& original_path) {
 //    cv.wait(ul, [](){
 //        return (http_status != http::status::unknown);
 //    });
-    if(http_status == http::status::ok && local_digest == remote_digest)
+    if(res.result() == http::status::ok && res.body() == local_digest)
         return true;
 
     return false;
 }
 
 bool backup_file(const std::string& original_path) {
-    http_status = http::status::unknown;
     http::request<http::string_body> req;
+    http::response<http::string_body> res;
 
     // make the relative path
     std::string relative_path = original_path.substr(configuration::backup_path.length());
@@ -104,7 +104,7 @@ bool backup_file(const std::string& original_path) {
     // create the encoded file
     auto encoded_file = encode(original_path);
 
-    std::cout<< encoded_file.get()<<std::endl;
+    //std::cout<< encoded_file.get()<<std::endl;
     // prepare the request message
     req.method(http::verb::post);
     req.target("/backup" + relative_path);
@@ -118,11 +118,101 @@ bool backup_file(const std::string& original_path) {
 
     net::io_context ioc;
     // Launch the asynchronous operation
-    std::make_shared<Session>(ioc)->run(&req);
+    std::make_shared<Session>(ioc, req, res)->run();
     // Run the I/O service. The call will return when the get operation is complete.
     ioc.run();
 
-    if(http_status == http::status::ok)
+    if(res.result() == http::status::ok)
+        return true;
+
+    return false;
+}
+
+bool probe_folder(const std::string& original_path) {
+    http::request<http::string_body> req;
+    http::response<http::string_body> res;
+
+    // make the relative path
+    std::string relative_path = original_path.substr(configuration::backup_path.length());
+    // substitute spaces with %20
+    replaceSpaces(relative_path);
+
+    // prepare the request message
+    req.method(http::verb::post);
+    req.target("/probefolder" + relative_path);
+    req.set(http::field::content_type, "application/json");
+
+    std::set<std::string> children_set = get_children(original_path);
+    json j;
+    j["children"] = children_set;
+    std::cout << j << std::endl;
+
+    req.body() = j.dump();
+    req.content_length(j.dump().length());
+
+    net::io_context ioc;
+    // Launch the asynchronous operation
+    std::make_shared<Session>(ioc, req, res)->run();
+    // Run the I/O service. The call will return when the get operation is complete.
+    ioc.run();
+
+    if(res.result() == http::status::ok)
+        return true;
+
+    return false;
+}
+
+bool backup_folder(const std::string& original_path) {
+    http::request<http::string_body> req;
+    http::response<http::string_body> res;
+
+    // make the relative path
+    std::string relative_path = original_path.substr(configuration::backup_path.length());
+    // substitute spaces with %20
+    replaceSpaces(relative_path);
+
+    // prepare the request message
+    req.method(http::verb::post);
+    req.target("/backup" + relative_path);
+    req.set(http::field::content_type, "application/json");
+    json j = {
+            {"type", "folder"}
+    };
+    req.body() = j.dump();
+    req.content_length(j.dump().length());
+
+    net::io_context ioc;
+    // Launch the asynchronous operation
+    std::make_shared<Session>(ioc, req, res)->run();
+    // Run the I/O service. The call will return when the get operation is complete.
+    ioc.run();
+
+    if(res.result() == http::status::ok)
+        return true;
+
+    return false;
+}
+
+bool delete_path(const std::string& original_path) {
+    http::request<http::string_body> req;
+    http::response<http::string_body> res;
+
+    // make the relative path
+    std::string relative_path = original_path.substr(configuration::backup_path.length());
+    // substitute spaces with %20
+    replaceSpaces(relative_path);
+
+    // prepare the request message
+    req.method(http::verb::delete_);
+    req.target("/backup" + relative_path);
+
+    net::io_context ioc;
+    // Launch the asynchronous operation
+    std::make_shared<Session>(ioc, req, res)->run();
+    // Run the I/O service. The call will return when the get operation is complete.
+    ioc.run();
+
+    if(res.result() == http::status::ok)
         return true;
 
     return false;

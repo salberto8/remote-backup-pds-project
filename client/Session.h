@@ -40,27 +40,29 @@ class Session : public std::enable_shared_from_this<Session>
     tcp::resolver resolver_;
     beast::tcp_stream stream_;
     beast::flat_buffer buffer_; // (Must persist between reads)
-    http::request<http::string_body> req_;
-    http::response<http::string_body> res_;
+    http::request<http::string_body>& req_;
+    http::response<http::string_body>& res_;
 
 public:
     // Objects are constructed with a strand to
     // ensure that handlers do not execute concurrently.
     explicit
-    Session(net::io_context& ioc)
+    Session(net::io_context& ioc,
+            http::request<http::string_body>& req,
+            http::response<http::string_body>& res)
             : resolver_(net::make_strand(ioc))
             , stream_(net::make_strand(ioc))
+            , req_(req)
+            , res_(res)
     {
     }
 
     // Start the asynchronous operation
     void
-    run(
-            http::request<http::string_body> *req
-            )
+    run()
     {
         // Set up an HTTP request message
-        req_ = std::move(*req);
+        //req_ = std::move(req);
         req_.set(http::field::host, configuration::address);
         req_.version(11);
         req_.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
@@ -80,7 +82,7 @@ public:
     void
     on_resolve(
             beast::error_code ec,
-            tcp::resolver::results_type results)
+            const tcp::resolver::results_type& results)
     {
         if(ec)
             return fail(ec, "resolve");
@@ -97,7 +99,7 @@ public:
     }
 
     void
-    on_connect(beast::error_code ec, tcp::resolver::results_type::endpoint_type)
+    on_connect(beast::error_code ec, const tcp::resolver::results_type::endpoint_type&)
     {
         if(ec)
             return fail(ec, "connect");
@@ -140,7 +142,8 @@ public:
             return fail(ec, "read");
 
         // Save the response
-        handle_response(&res_);
+        //handle_response(&res_);
+
 
         // Gracefully close the socket
         stream_.socket().shutdown(tcp::socket::shutdown_both, ec);

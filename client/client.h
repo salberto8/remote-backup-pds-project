@@ -12,10 +12,11 @@
 
 namespace http = boost::beast::http;       // from <boost/beast/http.hpp>
 
-void handle_response(http::response<http::string_body> *res);
 
 bool probe_file(const std::string& original_path);
 bool backup_file(const std::string& original_path);
-
+bool probe_folder(const std::string& original_path);
+bool backup_folder(const std::string& original_path);
+bool delete_path(const std::string& original_path);
 
 #endif //CLIENT_CLIENT_H
