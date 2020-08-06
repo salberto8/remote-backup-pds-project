@@ -35,7 +35,7 @@ See examples in test_server folder
   - file/folder removed: 200 OK
   - file/folder not foud: 404 NOT FOUND
   
-### libraries used
+### Libraries used
 - boost 1.73.0 (at least program_options must be built)
 - nlohmann/json (nlohmann-json3-dev)
 - openssl (libssl-dev)
@@ -52,7 +52,7 @@ port=12345
 backup_path=/home/user/Downloads
 ```
 
-### libraries used
+### Libraries used
 - boost 1.73.0 (at least program_options must be built)
 - nlohmann/json (nlohmann-json3-dev)
 - openssl (libssl-dev)
