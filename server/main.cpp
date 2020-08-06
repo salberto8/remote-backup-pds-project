@@ -17,6 +17,19 @@ int main() {
     // Create and launch a listening port
     std::make_shared<Listener>(ioc,tcp::endpoint{configuration::address, configuration::port})->run();
 
+
+    // Capture SIGINT and SIGTERM to perform a clean shutdown
+    net::signal_set signals(ioc, SIGINT, SIGTERM);
+    signals.async_wait(
+            [&](beast::error_code const&, int)
+            {
+                // Stop the `io_context`. This will cause `run()`
+                // to return immediately, eventually destroying the
+                // `io_context` and all of the sockets in it.
+                std::cout << "Exit after signal" << std::endl;
+                ioc.stop();
+            });
+
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;
     v.reserve(configuration::nthreads - 1);
@@ -26,6 +39,11 @@ int main() {
                     ioc.run();
                 });
     ioc.run();
+
+
+    // Block until all the threads exit
+    for(auto& t : v)
+        t.join();
 
     return 0;
 }
