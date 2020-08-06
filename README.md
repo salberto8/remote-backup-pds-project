@@ -35,6 +35,12 @@ See examples in test_server folder
   - file/folder removed: 200 OK
   - file/folder not foud: 404 NOT FOUND
   
+### libraries used
+- boost 1.73.0 (at least program_options must be built)
+- nlohmann/json (nlohmann-json3-dev)
+- openssl (libssl-dev)
+- sqlite (libsqlite3-dev)
+  
 ## Client
 ### Configuration
 Before the first start you should create a config file called backup.conf in your home directory.
@@ -45,9 +51,8 @@ address=127.0.0.1
 port=12345
 backup_path=/home/user/Downloads
 ```
-  
-### librerie usate nel server
-- boost (completo bisogna fare la build almeno di program_options)
-- nlohmann/json
-- openssl (apt install libssl-dev)
-- sqlite (apt install libsqlite3-dev)
+
+### libraries used
+- boost 1.73.0 (at least program_options must be built)
+- nlohmann/json (nlohmann-json3-dev)
+- openssl (libssl-dev)
