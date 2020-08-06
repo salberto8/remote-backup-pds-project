@@ -10,15 +10,34 @@
 
 namespace fs = std::filesystem;
 
-
 #define BUF_SIZE 2048
 
 
-bool save_file(const std::string &user, const std::string &filename, std::unique_ptr<char[]> &&raw_file, std::size_t n) {
+/**
+ * compute the absolute path from the username and the relative path
+ *
+ * @param user username of the authenticated user
+ * @param path relative path
+ * @return the absolute path
+ */
+std::string get_abs_path(const std::string& user,const std::string& path){
+    return configuration::backuppath + user + "/" + path;
+}
 
-    std::string path = configuration::backuppath + user + "/" + filename;
+/**
+ * create/override a file with the given data
+ *
+ * @param user username of the authenticated user
+ * @param path of the file to create/override
+ * @param raw_file data saved in the file (raw bytes)
+ * @param n number of bytes
+ * @return true if file was saved, false otherwise
+ */
+bool save_file(const std::string &user, const std::string &path, std::unique_ptr<char[]> &&raw_file, std::size_t n) {
 
-    std::ofstream file(path, std::ios::out|std::ios::binary|std::ios::trunc);
+    std::string abs_path = get_abs_path(user, path);
+
+    std::ofstream file(abs_path, std::ios::out | std::ios::binary | std::ios::trunc);
     if(file.is_open()){
         file.write(raw_file.get(),n);
         file.close();
@@ -27,12 +46,18 @@ bool save_file(const std::string &user, const std::string &filename, std::unique
         return false;
 }
 
+/**
+ * compute the SHA256 digest of a file
+ *
+ * @param user username of the authenticated user
+ * @param path of the file to compute the digest
+ * @return the digest in hexadecimal format, a empty optional if file doesn't exist or a error occurred
+ */
+std::optional<std::string> get_file_digest(const std::string &user, const std::string& path) {
 
-std::optional<std::string> get_file_digest(const std::string &user, const std::string& file_path) {
+    std::string abs_path = get_abs_path(user,path);
 
-    std::string path = configuration::backuppath + user + "/" + file_path;
-
-    if(!fs::is_regular_file(path))
+    if(!fs::is_regular_file(abs_path))
         return {};
 
     EVP_MD_CTX *md;
@@ -43,7 +68,7 @@ std::optional<std::string> get_file_digest(const std::string &user, const std::s
     unsigned char buf[BUF_SIZE];
     FILE * fin;
 
-    if((fin = fopen(path.c_str(),"rb")) == NULL) {
+    if((fin = fopen(abs_path.c_str(),"rb")) == NULL) {
         return {};
     }
 
@@ -73,16 +98,27 @@ std::optional<std::string> get_file_digest(const std::string &user, const std::s
     return digest;
 }
 
-
+/**
+ * create a new directory
+ * @param user username of the authenticated user
+ * @param path of the directory to create
+ * @return true if the directory was created, false otherwise
+ */
 bool new_directory(const std::string& user, const std::string& path){
-    return fs::create_directory(configuration::backuppath + user + "/" + path);
+    return fs::create_directory(get_abs_path(user,path));
 }
 
 
 
-
+/**
+ * remove all the children of the directory not in the children set
+ * @param user username of the authenticated user
+ * @param path of the directory to probe
+ * @param children set of children in the directory
+ * @return true if the directory exists, false otherwise
+ */
 bool probe_directory(const std::string& user, const std::string& path, const std::set<std::string> & children){
-    std::string abs_path = configuration::backuppath + user+"/"+path;
+    std::string abs_path = get_abs_path(user,path);
     if(!fs::is_directory(abs_path))
         return false;
 
@@ -106,11 +142,16 @@ bool probe_directory(const std::string& user, const std::string& path, const std
 }
 
 
-
-
+/**
+ * remove file or folder (recursively!)
+ *
+ * @param user username of the authenticated user
+ * @param path of the file/folder to delete
+ * @return true if correctly deleted, false otherwise
+ */
 bool backup_delete(const std::string& user, const std::string& path){
 
-    std::string abs_path = configuration::backuppath + user+"/"+path;
+    std::string abs_path = get_abs_path(user,path);
 
     if (fs::is_directory(abs_path)){
         return fs::remove_all(abs_path) > 0; //recursive elimination!

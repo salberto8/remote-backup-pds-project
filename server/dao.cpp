@@ -6,6 +6,12 @@
 
 Dao* Dao::instance= nullptr;
 
+/**
+ * return the username athenticated with the given token
+ *
+ * @param token the authentication token
+ * @return the authenticated username if present, a empty optional otherwise
+ */
 std::optional<std::string> Dao::getUserFromToken(const std::string &token) {
     if(!conn_open)
         return {};
@@ -34,6 +40,11 @@ std::optional<std::string> Dao::getUserFromToken(const std::string &token) {
     return {};
 }
 
+
+/**
+ * constructor of the Dao
+ * open the connection with the DB
+ */
 Dao::Dao() {
     std::string path = configuration::dbpath;
 

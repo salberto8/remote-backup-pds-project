@@ -29,12 +29,11 @@ namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
-bool save_file(const std::string &user, const std::string &filename, std::unique_ptr<char []> &&raw_file,std::size_t n);
+
+bool save_file(const std::string &user, const std::string &path, std::unique_ptr<char []> &&raw_file, std::size_t n);
 std::optional<std::string> get_file_digest(const std::string &user, const std::string& file_path);
 bool probe_directory(const std::string& user, const std::string& path, const std::set<std::string> &children);
 bool new_directory(const std::string& user, const std::string& path);
-
-//remove file or folder (recursively)
 bool backup_delete(const std::string& user, const std::string& path);
 
 #endif //SERVER_PROGETTO_BACKUP_H

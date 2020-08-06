@@ -29,8 +29,6 @@ class Dao{
     };
 
 
-
-
 public:
     static Dao* instance;
     static std::once_flag inited;
@@ -43,8 +41,6 @@ public:
 
         return instance;
     }
-
-
 
     std::optional<std::string> getUserFromToken(const std::string &token);
 
