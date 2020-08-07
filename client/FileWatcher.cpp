@@ -3,6 +3,7 @@
 //
 
 #include <thread>
+#include <iostream>
 
 #include "FileWatcher.h"
 #include "client.h"
@@ -44,8 +45,6 @@ void FileWatcher::start() {
                 if(!delete_path(it->first)) {
                     // gestire in caso di errore di connessione
                 }
-//                std::pair<std::string, FileStatus> path(it->first, FileStatus::erased);
-//                change_queue.insert(path);
                 it = paths_.erase(it);
             } else {
                 it++;
@@ -68,8 +67,6 @@ void FileWatcher::start() {
                     }
                 }
                 paths_[path_entry.path().string()] = current_file_last_write_time;
-//                std::pair<std::string, FileStatus> path(file.path().string(), FileStatus::created);
-//                change_queue.insert(path);
 
             } else {
                 // file / folder modification
@@ -87,13 +84,8 @@ void FileWatcher::start() {
                         }
                     }
                     paths_[path_entry.path().string()] = current_file_last_write_time;
-//                    std::pair<std::string, FileStatus> path(file.path().string(), FileStatus::modified);
-//                    change_queue.insert(path);
                 }
             }
         }
-
-        //if(!change_queue.empty())
-        //    try_to_upload();
     }
 }

@@ -7,9 +7,6 @@
 
 #include <boost/beast/http.hpp>
 
-//#include <mutex>
-//#include <condition_variable>
-
 namespace http = boost::beast::http;       // from <boost/beast/http.hpp>
 
 

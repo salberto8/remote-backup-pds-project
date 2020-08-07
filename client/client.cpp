@@ -4,23 +4,16 @@
 
 #include <thread>
 #include <nlohmann/json.hpp>
-#include <set>
 
 #include "client.h"
 #include "backup.h"
 #include "configuration.h"
 #include "Session.h"
 
-
 using json = nlohmann::json;
 
-//std::mutex m;
-//std::condition_variable cv;
-http::status http_status;
-std::string remote_digest;
 
 void replaceSpaces(std::string &str) {
-
     // Getting the length of the string, counting the number of spaces
     int strLen = str.length();
     int i, count = 0;
@@ -47,13 +40,6 @@ void replaceSpaces(std::string &str) {
         }
     }
 }
-
-/*void handle_response(http::response<http::string_body> *res) {
-    //std::lock_guard<std::mutex> lg(m);
-    remote_digest = res->body();
-    http_status = res->result();
-    //cv.notify_one();
-}*/
 
 bool probe_file(const std::string& original_path) {
     http::request<http::string_body> req;

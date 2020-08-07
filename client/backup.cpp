@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <set>
+
 
 #include "backup.h"
 
@@ -70,8 +70,7 @@ std::unique_ptr<char[]> encode(const std::string &path) {
     // the resulting string is not null terminated
     encoded_file[real_len] = 0;
 
-    //std::cout<< encoded_file.get()<<std::endl;
-    return std::move(encoded_file);
+    return encoded_file;
 }
 
 std::set<std::string> get_children(const std::string &path) {

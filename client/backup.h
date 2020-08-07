@@ -7,6 +7,7 @@
 
 
 #include <string>
+#include <set>
 
 std::string calculate_digest(std::string path);
 std::unique_ptr<char[]> encode(const std::string &original_path);
