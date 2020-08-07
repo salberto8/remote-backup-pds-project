@@ -9,13 +9,13 @@
 #include <fstream>
 #include <iostream>
 
-
 #include "backup.h"
 
+#define BUF_SIZE 2048
+
+namespace fs = std::filesystem;
 namespace base64 = boost::beast::detail::base64;
 
-
-#define BUF_SIZE 2048
 
 std::string calculate_digest(std::string path) {
     EVP_MD_CTX *md;
@@ -57,7 +57,7 @@ std::string calculate_digest(std::string path) {
 }
 
 std::unique_ptr<char[]> encode(const std::string &path) {
-    std::size_t original_len = std::filesystem::file_size(path);
+    std::size_t original_len = fs::file_size(path);
     std::size_t encoded_len = base64::encoded_size(original_len);
 
     std::unique_ptr<char[]> encoded_file{new char[encoded_len + 1]};
@@ -75,7 +75,7 @@ std::unique_ptr<char[]> encode(const std::string &path) {
 
 std::set<std::string> get_children(const std::string &path) {
     std::set<std::string> set;
-    for(const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(path)) {
+    for(const fs::directory_entry& entry : fs::directory_iterator(path)) {
         set.insert(entry.path().filename().string());
     }
     return std::move(set);
