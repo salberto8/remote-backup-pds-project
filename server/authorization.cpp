@@ -97,12 +97,6 @@ std::string createToken(int n){
 
     RAND_bytes(random_string, n);
 
-
-    printf("Random sequence generated: ");
-    for(i = 0; i < n; i++)
-        printf("%02x", random_string[i]);
-    printf("\n");
-
     std::stringstream ss;
     std::string output;
 

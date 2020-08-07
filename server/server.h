@@ -228,12 +228,13 @@ void handle_request(
         //check if authorized
         auto auth = req[http::field::authorization];
         if(auth.empty()){
+            std::cout << "token empty" << std::endl;
             return send(forbidden_response("Token needed"));
         }
         std::string token = auth.to_string();
         std::optional<std::string> user = verifyToken(token);
         if (!user.has_value()) {
-            //invalid token
+            std::cout << "invalid token" << std::endl;
             return send(forbidden_response("Invalid token"));
         }
 
@@ -245,6 +246,7 @@ void handle_request(
 
         //if starts with backup
         if (req_path.rfind("/backup/", 0) == 0){
+
             const std::string path = req_path.substr(8);
 
             json j = json::parse(req.body());

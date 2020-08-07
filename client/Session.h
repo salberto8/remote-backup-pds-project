@@ -66,7 +66,8 @@ public:
         req_.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
         // authorization to be implemented
-        req_.set(http::field::authorization, "aaa");
+        if (!configuration::token.empty())
+            req_.set(http::field::authorization, configuration::token);
 
         // Look up the domain name
         resolver_.async_resolve(

@@ -110,7 +110,6 @@ bool backup_file(const std::string& original_path) {
 
     if(res.result() == http::status::ok)
         return true;
-
     return false;
 }
 
@@ -200,6 +199,44 @@ bool delete_path(const std::string& original_path) {
 
     if(res.result() == http::status::ok)
         return true;
+
+    return false;
+}
+
+bool authenticateToServer(){
+    http::request<http::string_body> req;
+    http::response<http::string_body> res;
+    std::string password ;
+
+    std::cout << "Hello " + configuration::username
+              << "\n In order to authenticate to server, type your password: " << std::endl;
+
+    std::cin >> password;
+
+    // prepare the request message
+    req.method(http::verb::post);
+    req.target("/login");
+    req.set(http::field::content_type, "application/json");
+    json j = {
+            {"username", configuration::username},
+            {"password", password}
+    };
+    req.body() = j.dump();
+    req.content_length(j.dump().length());
+
+    net::io_context ioc;
+    // Launch the asynchronous operation
+    std::make_shared<Session>(ioc, req, res)->run();
+    // Run the I/O service. The call will return when the get operation is complete.
+    ioc.run();
+
+    if(res.result() == http::status::ok) {
+        std::string token = res.body();
+        std::cout<<"conf token before " << configuration::token << std::endl;
+        configuration::token = std::move(token);
+        std::cout<<"conf token after " << configuration::token << std::endl;
+        return true;
+    }
 
     return false;
 }

@@ -15,5 +15,6 @@ bool backup_file(const std::string& original_path);
 bool probe_folder(const std::string& original_path);
 bool backup_folder(const std::string& original_path);
 bool delete_path(const std::string& original_path);
+bool authenticateToServer();
 
 #endif //CLIENT_CLIENT_H

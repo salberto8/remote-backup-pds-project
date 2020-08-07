@@ -2,6 +2,7 @@
 
 #include "configuration.h"
 #include "FileWatcher.h"
+#include "client.h"
 
 int main() {
     // load the config file
@@ -13,6 +14,10 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    if(!authenticateToServer()){
+        std::cerr << "Impossible to authenticate to server " << std::endl;
+        return EXIT_FAILURE;
+    }
 
     // FileWatcher refer to a path with a time interval at which we check for changes
     FileWatcher fw{configuration::backup_path, std::chrono::milliseconds(5000)};
