@@ -18,27 +18,19 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 // Handles an HTTP server connection
 class Session : public std::enable_shared_from_this<Session>
 {
-    // This is the C++11 equivalent of a generic lambda.
-    // The function object is used to send an HTTP message.
-    struct send_lambda
-    {
-        Session& self_;
 
-        explicit
-        send_lambda(Session& self)
-                : self_(self)
-        {
-        }
+    // The function object is used to send an HTTP message.
+    class send_lambda{
+        Session& self_;
+    public:
+        explicit send_lambda(Session& self): self_(self){}
 
         template<bool isRequest, class Body, class Fields>
-        void
-        operator()(http::message<isRequest, Body, Fields>&& msg) const
-        {
+        void operator()(http::message<isRequest, Body, Fields>&& msg) const {
             // The lifetime of the message has to extend
             // for the duration of the async operation so
             // we use a shared_ptr to manage it.
-            auto sp = std::make_shared<
-            http::message<isRequest, Body, Fields>>(std::move(msg));
+            auto sp = std::make_shared<http::message<isRequest, Body, Fields>>(std::move(msg));
 
             // Store a type-erased version of the shared
             // pointer in the class to keep it alive.
@@ -55,6 +47,7 @@ class Session : public std::enable_shared_from_this<Session>
         }
     };
 
+
     beast::tcp_stream stream_;
     beast::flat_buffer buffer_;
     http::request<http::string_body> req_;
@@ -64,7 +57,7 @@ class Session : public std::enable_shared_from_this<Session>
 
 public:
     // Take ownership of the stream
-    Session(
+    explicit Session(
             tcp::socket&& socket)
             : stream_(std::move(socket))
             , lambda_(*this)

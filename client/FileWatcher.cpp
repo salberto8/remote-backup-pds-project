@@ -3,6 +3,7 @@
 //
 
 #include <thread>
+#include <iostream>
 
 #include "FileWatcher.h"
 #include "client.h"
@@ -12,14 +13,12 @@ FileWatcher::FileWatcher(const std::string& path_to_watch, std::chrono::duration
 
     for(auto &path_entry : std::filesystem::recursive_directory_iterator(path_to_watch)) {
         // check if the file/folder exists in the server, if not, backup it
-        // check_and_backup(path_entry);
         if(path_entry.is_directory()) {
-/*            if(!probe_folder(path_entry.path().string())) {
+            if(!probe_folder(path_entry.path().string())) {
                 if(!backup_folder(path_entry.path().string())) {
                     // gestire in caso di errore di connessione
-                    // si può creare una funzione nel main per controllare la connessione
                 }
-            }*/
+            }
         }
         else if(path_entry.is_regular_file()) {
             if(!probe_file(path_entry.path().string())) {
@@ -41,35 +40,52 @@ void FileWatcher::start() {
 
         auto it = paths_.begin();
         while (it != paths_.end()) {
-            // File elimination
+            // file / folder elimination
             if (!std::filesystem::exists(it->first)) {
-                std::pair<std::string, FileStatus> path(it->first, FileStatus::erased);
-                change_queue.insert(path);
+                if(!delete_path(it->first)) {
+                    // gestire in caso di errore di connessione
+                }
                 it = paths_.erase(it);
             } else {
                 it++;
             }
         }
 
-        for (auto &file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
-            auto current_file_last_write_time = std::filesystem::last_write_time(file);
+        for (auto &path_entry : std::filesystem::recursive_directory_iterator(path_to_watch)) {
+            auto current_file_last_write_time = std::filesystem::last_write_time(path_entry);
 
-            // File creation
-            if (!contains(file.path().string())) {
-                paths_[file.path().string()] = current_file_last_write_time;
-                std::pair<std::string, FileStatus> path(file.path().string(), FileStatus::created);
-                change_queue.insert(path);
+            // file / folder creation
+            if (!contains(path_entry.path().string())) {
+                if(path_entry.is_directory()) {
+                    if(!backup_folder(path_entry.path().string())) {
+                        // gestire in caso di errore di connessione
+                    }
+                }
+                else if(path_entry.is_regular_file()) {
+                    if(!backup_file(path_entry.path().string())) {
+                        // gestire in caso di errore di connessione
+                    }
+                }
+                paths_[path_entry.path().string()] = current_file_last_write_time;
+
             } else {
-                // File modification
-                if (paths_[file.path().string()] != current_file_last_write_time) {
-                    paths_[file.path().string()] = current_file_last_write_time;
-                    std::pair<std::string, FileStatus> path(file.path().string(), FileStatus::modified);
-                    change_queue.insert(path);
+                // file / folder modification
+                if (paths_[path_entry.path().string()] != current_file_last_write_time) {
+                    if(delete_path(path_entry.path().string())) {
+                        if(path_entry.is_directory()) {
+                            if(!backup_folder(path_entry.path().string())) {
+                                // gestire in caso di errore di connessione
+                            }
+                        }
+                        else if(path_entry.is_regular_file()) {
+                            if(!backup_file(path_entry.path().string())) {
+                                // gestire in caso di errore di connessione
+                            }
+                        }
+                    }
+                    paths_[path_entry.path().string()] = current_file_last_write_time;
                 }
             }
         }
-
-        //if(!change_queue.empty())
-        //    try_to_upload();
     }
 }
