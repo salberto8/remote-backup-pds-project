@@ -217,8 +217,12 @@ void handle_request(
                 // the user exists and the password is verified
 
                 // create token
-                std::string token{"token"};
+                std::string token = createToken(32);
+
                 // save token related to user
+                if(!saveTokenToUser(username, token))
+                    return send(server_error("Error in creating token to user"));
+
                 // send token
                 http::response<http::string_body> res{
                         http::status::ok,
