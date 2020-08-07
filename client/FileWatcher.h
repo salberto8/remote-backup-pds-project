@@ -20,6 +20,8 @@ public:
     void start();
 
 private:
+    void initialization();
+
     std::string path_to_watch;
     std::chrono::duration<int, std::milli> delay;
 
@@ -33,6 +35,8 @@ private:
         auto el = paths_.find(key);
         return el != paths_.end();
     }
+
+    void check_connection_and_retry();
 };
 
 

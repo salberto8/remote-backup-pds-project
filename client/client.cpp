@@ -48,6 +48,7 @@ void replaceSpaces(std::string &str) {
 bool send_request(http::verb method, const char* target, const std::string &abs_path, const char* type) {
     http::request<http::string_body> req;
     http::response<http::string_body> res;
+    res.result(http::status::unknown);
     json j;
 
     // make the relative path
@@ -86,13 +87,16 @@ bool send_request(http::verb method, const char* target, const std::string &abs_
 
     if(res.result() == http::status::ok)
         return true;
-
-    return false;
+    else if(res.result() == http::status::not_found)
+        return false;
+    else
+        throw (ExceptionBackup(res.body(), 5));
 }
 
 bool probe_file(const std::string& abs_path) {
     http::request<http::string_body> req;
     http::response<http::string_body> res;
+    res.result(http::status::unknown);
 
     // make the relative path
     std::string relative_path = abs_path.substr(configuration::backup_path.length());
@@ -119,22 +123,24 @@ bool probe_file(const std::string& abs_path) {
 
     if(res.result() == http::status::ok && res.body() == local_digest)
         return true;
-
-    return false;
+    else if(res.result() == http::status::not_found)
+        return false;
+    else
+        throw (ExceptionBackup(res.body(), 5));
 }
 
-bool backup_file(const std::string& abs_path) {
-    return send_request(http::verb::post, "/backup", abs_path, "file");
+void backup_file(const std::string& abs_path) {
+    send_request(http::verb::post, "/backup", abs_path, "file");
 }
 
 bool probe_folder(const std::string& abs_path) {
     return send_request(http::verb::post, "/probefolder", abs_path, "folder");
 }
 
-bool backup_folder(const std::string& abs_path) {
-    return send_request(http::verb::post, "/backup", abs_path, "folder");
+void backup_folder(const std::string& abs_path) {
+    send_request(http::verb::post, "/backup", abs_path, "folder");
 }
 
-bool delete_path(const std::string& abs_path) {
-    return send_request(http::verb::delete_, "/backup", abs_path, "");
+void delete_path(const std::string& abs_path) {
+    send_request(http::verb::delete_, "/backup", abs_path, "");
 }
