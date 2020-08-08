@@ -209,7 +209,7 @@ bool authenticateToServer(){
     std::string password ;
 
     std::cout << "Hello " + configuration::username
-              << "\n In order to authenticate to server, type your password: " << std::endl;
+              << "\nIn order to authenticate to server, type your password: " ;
 
     std::cin >> password;
 
@@ -217,6 +217,7 @@ bool authenticateToServer(){
     req.method(http::verb::post);
     req.target("/login");
     req.set(http::field::content_type, "application/json");
+    // the body contains a json with username and password
     json j = {
             {"username", configuration::username},
             {"password", password}
@@ -232,9 +233,36 @@ bool authenticateToServer(){
 
     if(res.result() == http::status::ok) {
         std::string token = res.body();
-        std::cout<<"conf token before " << configuration::token << std::endl;
+
+        // save the token got from the server in the configuration
         configuration::token = std::move(token);
-        std::cout<<"conf token after " << configuration::token << std::endl;
+
+        return true;
+    }
+
+    return false;
+}
+
+bool logout(){
+    http::request<http::string_body> req;
+    http::response<http::string_body> res;
+
+    // prepare the request message
+    req.method(http::verb::post);
+    req.target("/logout");
+
+    net::io_context ioc;
+    // Launch the asynchronous operation
+    std::make_shared<Session>(ioc, req, res)->run();
+    // Run the I/O service. The call will return when the get operation is complete.
+    ioc.run();
+
+    if(res.result() == http::status::ok) {
+
+        std::string token{""};
+        // delete the token from the configuration because invalid
+        configuration::token = std::move(token);
+
         return true;
     }
 

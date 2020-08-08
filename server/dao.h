@@ -44,6 +44,7 @@ public:
     std::optional<std::string> getUserFromToken(const std::string &token);
     std::optional<std::string> getPasswordFromUser(const std::string &username);
     bool insertTokenToUser(const std::string &username, const std::string &token);
+    bool deleteTokenToUser(const std::string &username);
 
     Dao(const Dao&)= delete;
     Dao& operator=(const Dao&)= delete;

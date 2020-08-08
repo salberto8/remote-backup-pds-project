@@ -221,9 +221,11 @@ void handle_request(
                 return send(std::move(res));
             }
             else {
+                // if the verification of the password fails send error
                 return send(server_error("Authentication failed"));
             }
         }
+
 
         //check if authorized
         auto auth = req[http::field::authorization];
@@ -238,11 +240,9 @@ void handle_request(
             return send(forbidden_response("Invalid token"));
         }
 
-
         //avoid path traversal
         if(req_path.find("..")!=std::string::npos)
             return send(bad_request("Bad path"));
-
 
         //if starts with backup
         if (req_path.rfind("/backup/", 0) == 0){
@@ -296,7 +296,6 @@ void handle_request(
             }
         }
 
-
         if (req_path.rfind("/probefolder/", 0) == 0) {
             std::string path = req_path.substr(13);
 
@@ -323,6 +322,15 @@ void handle_request(
             }
         }
 
+        if (req_path.rfind("/logout", 0) == 0){
+
+            if (logoutUser(user.value())) {
+                return send(okay_response());
+            } else {
+                return send(server_error("Error during logout"));
+            }
+
+        }
         return send(bad_request("Illegal request"));
     }
 

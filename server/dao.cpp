@@ -40,6 +40,12 @@ std::optional<std::string> Dao::getUserFromToken(const std::string &token) {
     return {};
 }
 
+/**
+ * Get the password(hash) of the user saved in the db
+ *
+ * @param username of the user
+ * @return the password if present, a empty optional otherwise
+ */
 std::optional<std::string> Dao::getPasswordFromUser(const std::string &username){
     if(!conn_open)
         return {};
@@ -68,11 +74,57 @@ std::optional<std::string> Dao::getPasswordFromUser(const std::string &username)
     return {};
 }
 
+/**
+ * Insert token related to user in the db
+ *
+ * @param username the username of the user
+ * @param token the authentication token
+ * @return true if the insertion has been applied, false otherwise
+ */
 bool Dao::insertTokenToUser(const std::string &username, const std::string &token){
     if(!conn_open)
         return {};
 
     sqlite3_stmt* stmt = nullptr;
+
+    int rc = sqlite3_prepare_v2( db, "UPDATE users SET token=? WHERE username = ?", -1, &stmt, 0 );
+    if ( rc != SQLITE_OK )
+        return false;
+
+
+    //  Bind-parameter indexing is 1-based.
+    if ( sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr) != SQLITE_OK) // Bind first parameter.
+    {
+        sqlite3_finalize( stmt );
+        return false;
+    }
+    if ( sqlite3_bind_text( stmt, 2, username.c_str(), username.size(), nullptr) != SQLITE_OK)  // Bind second parameter.
+    {
+        sqlite3_finalize( stmt );
+        return false;
+    }
+
+    rc = sqlite3_step( stmt );
+
+    sqlite3_finalize( stmt );
+
+    if( rc  != SQLITE_DONE ) { // if query has been executed without errors.
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Delete token to user in the db
+ *
+ * @param username username of the user who wants to logout
+ */
+bool Dao::deleteTokenToUser(const std::string &username){
+    if(!conn_open)
+        return {};
+
+    sqlite3_stmt* stmt = nullptr;
+    std::string token{""};
 
     int rc = sqlite3_prepare_v2( db, "UPDATE users SET token=? WHERE username = ?", -1, &stmt, 0 );
     if ( rc != SQLITE_OK )

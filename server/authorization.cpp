@@ -86,8 +86,6 @@ bool verifyUserPassword(const std::string& username, const std::string& password
 
 std::string createToken(int n){
     unsigned char random_string[MAX_BUF];
-    int i;
-
 
     int rc = RAND_load_file("/dev/random", 32); //good for the seed
     if(rc != 32) {
@@ -97,6 +95,7 @@ std::string createToken(int n){
 
     RAND_bytes(random_string, n);
 
+    // convert the bytes in string format
     std::stringstream ss;
     std::string output;
 
@@ -109,7 +108,15 @@ std::string createToken(int n){
 }
 
 bool saveTokenToUser(std::string &username, std::string &token){
+    // get dao instance
     Dao *dao = Dao::getInstance();
 
     return dao->insertTokenToUser(username, token);
+}
+
+bool logoutUser(std::string &username){
+    // get dao instance
+    Dao *dao = Dao::getInstance();
+
+    return dao->deleteTokenToUser(username);
 }

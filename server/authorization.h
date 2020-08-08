@@ -27,4 +27,7 @@ std::string createToken(int n);
 // save token into database
 bool saveTokenToUser(std::string &username, std::string &token);
 
+// logout user (delete token from database)
+bool logoutUser(std::string &username);
+
 #endif //SERVER_PROGETTO_AUTHORIZATION_H
