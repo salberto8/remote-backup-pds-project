@@ -10,11 +10,20 @@
 #include "configuration.h"
 #include "Session.h"
 
+// define the target for using the server API
+#define probefile "/probefile/"
+#define probefolder "/probefolder/"
+#define backup "/backup/"
+
+// define folder and file standards
+#define folder 1
+#define file 2
+
 
 using json = nlohmann::json;
 
 void replaceSpaces(std::string &str);
-bool send_request(http::verb method, const char* target, const std::string &abs_path, const char* type);
+bool send_request(http::verb method, const char* target, const std::string &abs_path, int type);
 
 
 void replaceSpaces(std::string &str) {
@@ -45,7 +54,7 @@ void replaceSpaces(std::string &str) {
     }
 }
 
-bool send_request(http::verb method, const char* target, const std::string &abs_path, const char* type) {
+bool send_request(http::verb method, const char* target, const std::string &abs_path, int type) {
     http::request<http::string_body> req;
     http::response<http::string_body> res;
     res.result(http::status::unknown);
@@ -60,14 +69,14 @@ bool send_request(http::verb method, const char* target, const std::string &abs_
     req.method(method);
     req.target(target + relative_path);
 
-    if(std::strcmp(target, "/probefolder") == 0) {
+    if(std::strcmp(target, probefolder) == 0) {
         std::set<std::string> children_set = get_children(abs_path);
         j["children"] = children_set;
     }
-    else if(std::strcmp(target, "/backup") == 0 && std::strcmp(type, "folder") == 0) {
+    else if(std::strcmp(target, backup) == 0 && type == folder) {
         j["type"] = "folder";
     }
-    else if(std::strcmp(target, "/backup") == 0 && std::strcmp(type, "file") == 0) {
+    else if(std::strcmp(target, backup) == 0 && type == file) {
         auto encoded_file = encode(abs_path);
         j["type"] = "file";
         j["encodedfile"] = encoded_file.get();
@@ -90,7 +99,7 @@ bool send_request(http::verb method, const char* target, const std::string &abs_
     else if(res.result() == http::status::not_found)
         return false;
     else
-        throw (ExceptionBackup(res.body(), 5));
+        throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
 }
 
 bool probe_file(const std::string& abs_path) {
@@ -105,7 +114,7 @@ bool probe_file(const std::string& abs_path) {
 
     // prepare the request message
     req.method(http::verb::get);
-    req.target("/probefile" + relative_path);
+    req.target(probefile + relative_path);
 
     net::io_context ioc;
     // Launch the asynchronous operation
@@ -126,21 +135,22 @@ bool probe_file(const std::string& abs_path) {
     else if(res.result() == http::status::not_found)
         return false;
     else
-        throw (ExceptionBackup(res.body(), 5));
+        throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
 }
 
 void backup_file(const std::string& abs_path) {
-    send_request(http::verb::post, "/backup", abs_path, "file");
+    send_request(http::verb::post, backup, abs_path, file);
 }
 
 bool probe_folder(const std::string& abs_path) {
-    return send_request(http::verb::post, "/probefolder", abs_path, "folder");
+    return send_request(http::verb::post, probefolder, abs_path, folder);
 }
 
 void backup_folder(const std::string& abs_path) {
-    send_request(http::verb::post, "/backup", abs_path, "folder");
+    send_request(http::verb::post, backup, abs_path, folder);
 }
 
 void delete_path(const std::string& abs_path) {
-    send_request(http::verb::delete_, "/backup", abs_path, "");
+    // the delete method is valid for both folders and files
+    send_request(http::verb::delete_, backup, abs_path, 0);
 }

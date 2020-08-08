@@ -27,14 +27,6 @@ namespace net = boost::asio;        // from <boost/asio.hpp>
 using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 
-// Report a failure
-/*void
-fail(beast::error_code ec, char const* what)
-{
-    std::cerr << what << ": " << ec.message() << "\n";
-}*/
-
-
 // Performs an HTTP request and saves the response
 class Session : public std::enable_shared_from_this<Session>
 {
@@ -84,10 +76,8 @@ public:
             beast::error_code ec,
             const tcp::resolver::results_type& results)
     {
-        if(ec) {
-            //return fail(ec, "resolve");
-            throw (ExceptionBackup(ec.message(), 1));
-        }
+        if(ec)
+            throw (ExceptionBackup("resolve: " + ec.message(), async_resolver_error));
 
         // Set a timeout on the operation
         stream_.expires_after(std::chrono::seconds(30));
@@ -103,10 +93,8 @@ public:
     void
     on_connect(beast::error_code ec, const tcp::resolver::results_type::endpoint_type&)
     {
-        if(ec) {
-            //return fail(ec, "connect");
-            throw (ExceptionBackup(ec.message(), 2));
-        }
+        if(ec)
+            throw (ExceptionBackup("connect: " + ec.message(), async_connection_error));
 
         // Set a timeout on the operation
         stream_.expires_after(std::chrono::seconds(30));
@@ -125,10 +113,8 @@ public:
     {
         boost::ignore_unused(bytes_transferred);
 
-        if(ec) {
-            //return fail(ec, "write");
-            throw (ExceptionBackup(ec.message(), 3));
-        }
+        if(ec)
+            throw (ExceptionBackup("write: " + ec.message(), async_write_error));
 
         // Receive the HTTP response
         http::async_read(stream_, buffer_, res_,
@@ -144,19 +130,15 @@ public:
     {
         boost::ignore_unused(bytes_transferred);
 
-        if(ec) {
-            //return fail(ec, "read");
-            throw (ExceptionBackup(ec.message(), 4));
-        }
+        if(ec)
+            throw (ExceptionBackup("read: " + ec.message(), async_read_error));
 
         // Gracefully close the socket
         stream_.socket().shutdown(tcp::socket::shutdown_both, ec);
 
         // not_connected happens sometimes so don't bother reporting it.
-        if(ec && ec != beast::errc::not_connected) {
-            //return fail(ec, "shutdown");
-            throw (ExceptionBackup(ec.message(), 4));
-        }
+        if(ec && ec != beast::errc::not_connected)
+            throw (ExceptionBackup("shutdown: " + ec.message(), async_shutdown_error));
 
         // If we get here then the connection is closed gracefully
     }
