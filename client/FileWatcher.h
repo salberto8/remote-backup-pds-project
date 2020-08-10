@@ -10,6 +10,8 @@
 #include <filesystem>
 #include <unordered_map>
 
+namespace fs = std::filesystem;
+
 
 class FileWatcher {
 public:
@@ -18,13 +20,16 @@ public:
     void start();
 
 private:
+    void initialization();
+    bool check_connection_and_retry();
+
     std::string path_to_watch;
     std::chrono::duration<int, std::milli> delay;
 
     // unordered_map: path of the file and its last modification time
     std::unordered_map<std::string, std::filesystem::file_time_type> paths_;
 
-    bool running_ = true;
+    int retry = 3;
 
     // Check if "paths_" contains a given key
     bool contains(const std::string &key) {

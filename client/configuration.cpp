@@ -58,6 +58,11 @@ bool configuration::load_config_file(const std::string &config_file) {
         configuration::backup_path = vm["backup_path"].as<std::string>();
         configuration::username = vm["username"].as<std::string>();
         configuration::token = "";
+
+        char end_slash = 47; // "/"
+        if(configuration::backup_path.back() != end_slash) {
+            configuration::backup_path = configuration::backup_path + end_slash;
+        }
     } catch(boost::bad_any_cast & e){
         std::cerr << "Bad configuration file, usage:\n" << desc << std::endl;
         return false;
