@@ -154,6 +154,42 @@ bool Dao::deleteTokenToUser(const std::string &username){
 }
 
 /**
+ * get all username of users present in the db
+ *
+ * @return vector of username
+ */
+std::vector<std::string> Dao::getAllUsers(){
+    std::vector<std::string> result;
+    if(!conn_open)
+        return {};
+
+
+    sqlite3_stmt* stmt = nullptr;
+
+    int rc = sqlite3_prepare_v2( db, "SELECT username FROM users ", -1, &stmt, 0 );
+    if ( rc != SQLITE_OK )
+        return {};
+
+    while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        std::string res = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+        result.push_back(res);
+    }
+    if(rc != SQLITE_DONE) {
+        //this error handling could be done better, but it works
+        printf("ERROR: while performing sql: %s\n", sqlite3_errmsg(db));
+        printf("ret_code = %d\n", rc);
+        return {};
+    }
+    else {
+        rc = sqlite3_finalize(stmt);
+        if (rc == SQLITE_OK)
+            return result;
+        else
+            return {};
+    }
+}
+
+/**
  * constructor of the Dao
  * open the connection with the DB
  */

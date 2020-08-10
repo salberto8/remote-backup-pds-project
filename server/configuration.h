@@ -19,6 +19,7 @@ namespace configuration
     extern std::string dbpath;
 
     bool load_config_file(const std::string &config_file);
+    bool prepare_environment();
 }
 
 

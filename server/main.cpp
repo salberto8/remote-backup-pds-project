@@ -10,6 +10,9 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    if(!configuration::prepare_environment()){
+        return EXIT_FAILURE;
+    }
 
     // The io_context is required for all I/O (including network)
     net::io_context ioc{configuration::nthreads};
