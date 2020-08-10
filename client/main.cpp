@@ -19,10 +19,7 @@ int main() {
             return EXIT_FAILURE;
         }
 
-        if(!authenticateToServer()){
-            std::cerr << "Impossible to authenticate to server " << std::endl;
-            return EXIT_FAILURE;
-        }
+        authenticateToServer();
 
 //        // check the connection, otherwise it raises an exception
 //        probe_folder(configuration::backup_path);

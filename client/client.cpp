@@ -155,9 +155,10 @@ void delete_path(const std::string& abs_path) {
     send_request(http::verb::delete_, backup, abs_path, 0);
 }
 
-bool authenticateToServer(){
+void authenticateToServer(){
     http::request<http::string_body> req;
     http::response<http::string_body> res;
+    res.result(http::status::unknown);
     std::string password ;
 
     std::cout << "Hello " + configuration::username
@@ -189,15 +190,16 @@ bool authenticateToServer(){
         // save the token got from the server in the configuration
         configuration::token = std::move(token);
 
-        return true;
+        return;
     }
-
-    return false;
+    else
+        throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
 }
 
-bool logout(){
+void logout(){
     http::request<http::string_body> req;
     http::response<http::string_body> res;
+    res.result(http::status::unknown);
 
     // prepare the request message
     req.method(http::verb::post);
@@ -215,8 +217,8 @@ bool logout(){
         // delete the token from the configuration because invalid
         configuration::token = std::move(token);
 
-        return true;
+        return ;
     }
-
-    return false;
+    else
+        throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
 }

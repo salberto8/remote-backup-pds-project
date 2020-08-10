@@ -194,8 +194,8 @@ void handle_request(
                 password = j.at("password");
             }
             catch (json::out_of_range& e){
-                //missing parameters
-                return send(bad_request("Missing parameters"));
+                //missing login parameters
+                return send(bad_request("Missing login parameters"));
             }
 
             if (verifyUserPassword(username, password)){
