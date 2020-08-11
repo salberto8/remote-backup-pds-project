@@ -54,10 +54,12 @@ bool FileWatcher::check_connection_and_retry() {
         std::this_thread::sleep_for(std::chrono::seconds(30));
 
         try {
-            if(probe_folder(path_to_watch)) {
+          /*  if(probe_folder(path_to_watch)) {
                 // the server connection is active
                 initialization();
-            }
+            }*/
+            authenticateToServer();
+            initialization();
             return true;
         }
         catch (const ExceptionBackup& e) {

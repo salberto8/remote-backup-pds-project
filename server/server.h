@@ -36,6 +36,9 @@ namespace base64 = boost::beast::detail::base64;
 // Report a failure
 void fail(beast::error_code ec, const std::string  &what);
 
+// replace %20 with the space
+void replaceSpaces(std::string &str);
+
 
 // This function produces an HTTP response for the given
 // request. The type of the response object depends on the
@@ -139,11 +142,16 @@ void handle_request(
         //if starts with probe
         if (path.rfind("/probefile/", 0) == 0) {
             path = path.substr(11);
+            std::clog << "get /probefile " << path << std::endl;
+
+            // substitute %20 with space
+            replaceSpaces(path);
 
             std::optional<std::string> digest_opt = get_file_digest(user.value(), path);
 
             if(digest_opt){
                 //file exists
+                std::clog << "file exists - sending digest " << std::endl;
                 std::string digest = digest_opt.value();
                 http::response<http::string_body> res{
                         http::status::ok,
@@ -156,6 +164,7 @@ void handle_request(
                 return send(std::move(res));
             } else {
                 //file not found
+                std::clog << " file doesn't exist - sending not found " << std::endl;
                 return send(not_found());
             }
         }
@@ -224,7 +233,6 @@ void handle_request(
             }
         }
 
-
         //check if authorized
         auto auth = req[http::field::authorization];
         if(auth.empty()){
@@ -245,7 +253,11 @@ void handle_request(
         //if starts with backup
         if (req_path.rfind("/backup/", 0) == 0){
 
-            const std::string path = req_path.substr(8);
+            std::string path = req_path.substr(8);
+            // substitute %20 with spaces
+            replaceSpaces(path);
+
+            std::clog << " post /backup " << path << std::endl;
 
             json j = json::parse(req.body());
 
@@ -257,8 +269,6 @@ void handle_request(
                 //missing parameters
                 return send(bad_request("Missing parameters"));
             }
-
-
 
             if(type == "file") {
                 std::string encodedfile;
@@ -277,16 +287,19 @@ void handle_request(
                 std::pair<std::size_t, std::size_t> res = base64::decode(raw_file.get(), encodedfile.c_str(), encodedfile.size());
 
                 if (save_file(user.value(), path, std::move(raw_file), res.first)) {
-                    std::cout << user.value() << "/" << path << std::endl;
+                    std::clog << " saved file " << path << std::endl;
                     return send(okay_response());
-                } else
+                } else {
+                    std::clog << "impossible save file " << path << std::endl;
                     return send(server_error("Impossible save the file, retry"));
+                }
 
             } else if (type == "folder"){
                 if(new_directory(user.value(),path)){
-                    std::cout << user.value() << "/" << path << std::endl;
+                    std::clog << " saved folder " << path << std::endl;
                     return send(okay_response());
                 } else {
+                    std::clog << "impossible save file " << path << std::endl;
                     return send(server_error("Impossible create the folder"));
                 }
             } else {
@@ -296,7 +309,10 @@ void handle_request(
 
         if (req_path.rfind("/probefolder/", 0) == 0) {
             std::string path = req_path.substr(13);
+            // substitute %20 with spaces
+            replaceSpaces(path);
 
+            std::clog << "post /probefolder " << path << std::endl;
             json j = json::parse(req.body());
 
             std::set<std::string> children;
@@ -313,9 +329,11 @@ void handle_request(
 
             if(res){
                 //folder exists
+                std::clog << "folder exists " << std::endl;
                 return send(okay_response());
             } else {
                 //folder not found
+                std::clog << "folder not found " << std::endl;
                 return send(not_found());
             }
         }
@@ -353,15 +371,23 @@ void handle_request(
         //if starts with backup
         if (req_path.rfind("/backup/", 0) == 0){
             std::string path = req_path.substr(8);
+            // substitute %20 with spaces
+            replaceSpaces(path);
+
+            std::clog << "delete request to "  << path << std::endl;
 
             //avoid path traversal
             if(path.find("..")!=std::string::npos)
                 return send(bad_request("Bad path"));
 
-            if(backup_delete(user.value(),path))
+            if(backup_delete(user.value(),path)) {
+                std::clog << "delete ok "<< path << std::endl;
                 return send(okay_response());
-            else
+            }
+            else {
+                std::clog << "delete fail " << path << std::endl;
                 return send(not_found());
+            }
         }
 
         return send(bad_request("Illegal request"));

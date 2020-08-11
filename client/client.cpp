@@ -4,6 +4,7 @@
 
 #include <thread>
 #include <nlohmann/json.hpp>
+#include <boost/asio/signal_set.hpp>
 
 #include "client.h"
 #include "backup.h"
@@ -91,13 +92,18 @@ bool send_request(http::verb method, const char* target, const std::string &abs_
     net::io_context ioc;
     // Launch the asynchronous operation
     std::make_shared<Session>(ioc, req, res)->run();
+
     // Run the I/O service. The call will return when the get operation is complete.
     ioc.run();
 
-    if(res.result() == http::status::ok)
+    if(res.result() == http::status::ok) {
+        std::clog << "sent request " << relative_path << std::endl;
         return true;
-    else if(res.result() == http::status::not_found)
+    }
+    else if(res.result() == http::status::not_found) {
+        std::clog << "received not foundo for " << relative_path << std::endl;
         return false;
+    }
     else
         throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
 }
@@ -119,6 +125,7 @@ bool probe_file(const std::string& abs_path) {
     net::io_context ioc;
     // Launch the asynchronous operation
     std::make_shared<Session>(ioc, req, res)->run();
+
     // Run the I/O service. The call will return when the get operation is complete.
     std::thread t_probe_file(
             [&ioc] {
@@ -130,10 +137,14 @@ bool probe_file(const std::string& abs_path) {
 
     t_probe_file.join();
 
-    if(res.result() == http::status::ok && res.body() == local_digest)
+    if(res.result() == http::status::ok && res.body() == local_digest) {
+        std::clog << "sent probe file " << relative_path << std::endl;
         return true;
-    else if(res.result() == http::status::not_found)
+    }
+    else if(res.result() == http::status::not_found) {
+        std::clog << "not found probe file " << relative_path << std::endl;
         return false;
+    }
     else
         throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
 }
@@ -181,6 +192,7 @@ void authenticateToServer(){
     net::io_context ioc;
     // Launch the asynchronous operation
     std::make_shared<Session>(ioc, req, res)->run();
+
     // Run the I/O service. The call will return when the get operation is complete.
     ioc.run();
 
