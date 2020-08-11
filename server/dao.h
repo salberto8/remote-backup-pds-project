@@ -46,6 +46,7 @@ public:
     bool insertTokenToUser(const std::string &username, const std::string &token);
     bool deleteTokenToUser(const std::string &username);
     std::vector<std::string> getAllUsers();
+    void deleteAllTokens();
 
     Dao(const Dao&)= delete;
     Dao& operator=(const Dao&)= delete;

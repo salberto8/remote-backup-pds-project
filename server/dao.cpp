@@ -189,6 +189,34 @@ std::vector<std::string> Dao::getAllUsers(){
     }
 }
 
+void Dao::deleteAllTokens(){
+    if(!conn_open)
+        return ;
+
+    sqlite3_stmt* stmt = nullptr;
+    std::string token{""};
+
+    int rc = sqlite3_prepare_v2( db, "UPDATE users SET token=? ", -1, &stmt, 0 );
+    if ( rc != SQLITE_OK )
+        return ;
+
+    //  Bind-parameter indexing is 1-based.
+    if ( sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr) != SQLITE_OK) // Bind first parameter.
+    {
+        sqlite3_finalize( stmt );
+        return;
+    }
+
+    rc = sqlite3_step( stmt );
+
+    sqlite3_finalize( stmt );
+
+    if( rc  != SQLITE_DONE ) { // if query has been executed without errors.
+        return ;
+    }
+    return ;
+}
+
 /**
  * constructor of the Dao
  * open the connection with the DB

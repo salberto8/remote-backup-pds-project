@@ -190,10 +190,12 @@ void authenticateToServer(){
         // save the token got from the server in the configuration
         configuration::token = std::move(token);
 
+        ioc.stop();
         return;
     }
-    else
+    else {
         throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
+    }
 }
 
 void logout(){

@@ -2,6 +2,7 @@
 
 #include "Listener.h"
 #include "configuration.h"
+#include "authorization.h"
 
 int main() {
 
@@ -34,6 +35,9 @@ int main() {
                 ss << "Exit after signal with code " << sign << std::endl;
                 std::cout << ss.str();
                 ioc.stop();
+
+                // delete tokens of all users
+                deleteAllTokens();
             });
 
 

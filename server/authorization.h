@@ -30,4 +30,7 @@ bool saveTokenToUser(std::string &username, std::string &token);
 // logout user (delete token from database)
 bool logoutUser(std::string &username);
 
+// delete all tokens of users
+void deleteAllTokens();
+
 #endif //SERVER_PROGETTO_AUTHORIZATION_H

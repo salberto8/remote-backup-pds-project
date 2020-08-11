@@ -120,3 +120,10 @@ bool logoutUser(std::string &username){
 
     return dao->deleteTokenToUser(username);
 }
+
+void deleteAllTokens(){
+    // get dao instance
+    Dao *dao = Dao::getInstance();
+
+    dao->deleteAllTokens();
+}
