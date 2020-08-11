@@ -70,6 +70,11 @@ bool configuration::load_config_file(const std::string &config_file)
         configuration::nthreads = std::max<int>(1, vm["nthreads"].as<int>());
         configuration::backuppath = vm["backuppath"].as<std::string>();
         configuration::dbpath = vm["dbpath"].as<std::string>();
+
+        char end_slash = 47; // "/"
+        if(configuration::backuppath.back() != end_slash) {
+            configuration::backuppath = configuration::backuppath + end_slash;
+        }
     } catch(boost::bad_any_cast & e){
         std::cerr << "Bad configuration file, usage:\n" << desc << std::endl;
         return false;
