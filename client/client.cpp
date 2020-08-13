@@ -78,9 +78,7 @@ bool send_request(http::verb method, const char* target, const std::string &abs_
         j["type"] = "folder";
     }
     else if(std::strcmp(target, backup) == 0 && type == file) {
-        std::clog << "before " << std::endl;
         auto encoded_file = encode(abs_path);
-        std::clog << "after " << std::endl;
         j["type"] = "file";
         j["encodedfile"] = encoded_file.get();
     }
@@ -99,11 +97,9 @@ bool send_request(http::verb method, const char* target, const std::string &abs_
     ioc.run();
 
     if(res.result() == http::status::ok) {
-        std::clog << "sent request " << relative_path << std::endl;
         return true;
     }
     else if(res.result() == http::status::not_found) {
-        std::clog << "received not foundo for " << relative_path << std::endl;
         return false;
     }
     else
@@ -142,24 +138,19 @@ bool probe_file(const std::string& abs_path) {
     if(res.result() == http::status::ok){
         if ( res.body() == local_digest) {
             // the file is the same on the server
-            std::clog << "sent probe file " << relative_path << std::endl;
             return true;
         }
         else {
             // digests are different -> delete file from server and re-send it. Then check with probe file
-            std::clog << "digest of " << relative_path << " is different from server " << std::endl;
             delete_path(abs_path);
             backup_file(abs_path);
             return probe_file(abs_path);
         }
     }
     else if(res.result() == http::status::not_found) {
-        std::clog << "not found probe file " << relative_path << std::endl;
         return false;
     }
     else {
-        std::clog << "exception raised with " << relative_path << std::endl;
-        std::clog << "res body " << res.body() << " result " << res.result();
         throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
     }
 }

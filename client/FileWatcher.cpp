@@ -107,7 +107,9 @@ void FileWatcher::initialization() {
                     // if 0 means no-sub directories, if 1 means one sub-directory, if 2 means more then 1 sub-directories
                     int directories = 0;
 
+                    myout("sending probe folder of " + path_entry.string());
                     if(!probe_folder(path_entry.string())) {
+                        myout("probe failed, sending backup folder " + path_entry.string());
                         backup_folder(path_entry.string());
                     }
                     // add the folder to the paths_ unordered_map
@@ -118,7 +120,9 @@ void FileWatcher::initialization() {
                     // iterate on all direct children of the directory
                     for (auto p : fs::directory_iterator(path_entry)) {
                         if (p.is_regular_file()) {
+                            myout("sending probe file of " + p.path().string());
                             if (!probe_file(p.path().string())) {
+                                myout("probe failed, sending backup file " + p.path().string());
                                 backup_file(p.path().string());
                             }
                             // add the file to the paths_ unordered_map
@@ -193,7 +197,7 @@ void FileWatcher::start() {
             while (it != paths_.end()) {
                 // file / folder elimination
                 if (!fs::exists(it->first)) {
-
+                    myout("delete path of " + it->first);
                     // delete from server
                     delete_path(it->first);
 
@@ -217,9 +221,11 @@ void FileWatcher::start() {
                 if (!contains(path_entry.path().string())) {
 
                     if(path_entry.is_directory()) {
+                        myout("backup folder " + path_entry.path().string());
                         backup_folder(path_entry.path().string());
                     }
                     else if(path_entry.is_regular_file()) {
+                        myout("backup file " + path_entry.path().string());
                         backup_file(path_entry.path().string());
                     }
                     paths_[path_entry.path().string()] = current_file_last_write_time;
@@ -234,6 +240,7 @@ void FileWatcher::start() {
                             backup_folder(path_entry.path().string());
                         }*/
                         if(path_entry.is_regular_file()) {
+                            myout("file modified: sending delete and backup " + path_entry.path().string());
                             delete_path(path_entry.path().string());
                             backup_file(path_entry.path().string());
                         }
