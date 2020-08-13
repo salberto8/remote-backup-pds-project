@@ -76,11 +76,12 @@ FileWatcher::FileWatcher(const std::string& path_to_watch, std::chrono::duration
 }
 
 void FileWatcher::initialization() {
+    // object implementing a fifo queue of directories and sub-directories present in the path to watch
     Jobs<std::filesystem::path> jobs;
 
-    std::vector<std::thread> producers;
-    std::vector<std::thread> consumers;
+    std::vector<std::thread> threads_;
 
+    // counter of possible leaf directories added to the queue (and decremented when it is sure is a leaf)
     std::atomic<int> count_leaves(0);
 
     // delete any files or folders no longer present in the root folder
@@ -89,41 +90,23 @@ void FileWatcher::initialization() {
     // erase all the elements in the path_ map
     paths_.clear();
 
-
+    // first insert in the queue the root directory
     jobs.put(path_to_watch);
     count_leaves.fetch_add(1);
-    /*
-    // producer (single thread)
-    producers.push_back(std::thread([&jobs, this](){
-        int i=1;
-        for (auto &path_entry: fs::recursive_directory_iterator(path_to_watch)) {
-            if (path_entry.is_directory()){
-                myout("inserting directory " + std::to_string(i++) + " " + path_entry.path().string());
-                jobs.put(path_entry.path());
-            }
-        }
-        myout("producer terminated");
-    }));*/
 
-
-    // 5 consumer threads
+    // 5 threads
     for(int i=0; i<5; i++){
-        consumers.push_back(std::thread([&jobs, this, &count_leaves, i](){
+        threads_.push_back(std::thread([&jobs, this, &count_leaves, i](){
             while(true){
+                // take a job from the queue
                 std::optional<fs::path>  path_ = jobs.get();
                 if(path_.has_value()){
-                    // safe perche' solo un consumer ricevera' il path
+                    // safe because only a thread will receive that path
                     fs::path path_entry = path_.value();
 
+                    // if 0 means no-sub directories, if 1 means one sub-directory, if 2 means more then 1 sub-directories
                     int directories = 0;
-                   /* fs::path parent = path_entry.parent_path();
-                    myout("path " + path_entry.string() );
-                    myout(" waiting for root " + parent.string());
-                    while (!probe_folder(parent)){
-                        std::this_thread::sleep_for(std::chrono::seconds(2));
-                    }*/
-                   // myout("path " + path_entry.string() + " now have root " + parent.string());
-                   //myout("here");
+
                     if(!probe_folder(path_entry.string())) {
                         backup_folder(path_entry.string());
                     }
@@ -132,27 +115,32 @@ void FileWatcher::initialization() {
                     paths_[path_entry.string()] = fs::last_write_time(path_entry);
                     mutex_paths_.unlock();
 
-                    for (auto p : fs::directory_iterator(path_entry))
-                        if(p.is_regular_file()) {
-                            if(!probe_file(p.path().string())) {
-                                myout("trying to backup " + p.path().string());
+                    // iterate on all direct children of the directory
+                    for (auto p : fs::directory_iterator(path_entry)) {
+                        if (p.is_regular_file()) {
+                            if (!probe_file(p.path().string())) {
                                 backup_file(p.path().string());
                             }
                             // add the file to the paths_ unordered_map
                             mutex_paths_.lock();
                             paths_[p.path().string()] = fs::last_write_time(p);
                             mutex_paths_.unlock();
-                        }
-                        else if (p.is_directory()){
-                            if (directories == 0 | directories == 1 )
+                        } else if (p.is_directory()) {
+                            if (directories == 0 || directories == 1)
                                 directories++;
                             else
+                                // add to count_leaves only if more then one sub-directory
                                 count_leaves.fetch_add(1);
                             jobs.put(p.path());
                         }
+                    }
+
+                    // if there are no sub-directories, the actual directory is really a leaf, so decrement counter
                     if (directories == 0)
                         count_leaves.fetch_sub(1);
 
+                    // if counter of leaf directories is 0 means that all the tree has been visited, so stop
+                    // the jobs queue
                     if (count_leaves.load() == 0){
                         jobs.ended();
                     }
@@ -164,17 +152,9 @@ void FileWatcher::initialization() {
         }));
     }
 
-    /*for (auto &p: producers) {
-        if(p.joinable()) p.join();
-    }*/
 
-    myout("producer terminati");
-  //  jobs.ended();
-
-    myout("in attesa consumer, job ancora aperti: " + std::to_string(jobs.size()));
-
-    for (auto &c: consumers) {
-        if(c.joinable()) c.join();
+    for (auto &t: threads_) {
+        if(t.joinable()) t.join();
     }
 
     myout("consumer terminati job ancora aperti: " + std::to_string(jobs.size()));
@@ -188,11 +168,8 @@ bool FileWatcher::check_connection_and_retry() {
         std::this_thread::sleep_for(std::chrono::seconds(30));
 
         try {
-          /*  if(probe_folder(path_to_watch)) {
-                // the server connection is active
-                initialization();
-            }*/
             authenticateToServer();
+            // the server connection is active
             initialization();
             return true;
         }
@@ -216,7 +193,17 @@ void FileWatcher::start() {
             while (it != paths_.end()) {
                 // file / folder elimination
                 if (!fs::exists(it->first)) {
+
+                    // delete from server
                     delete_path(it->first);
+
+                    // update last modified time of it's parent folder in paths_
+                    int pos = it->first.rfind("/");
+                    std::string parent= it->first.substr(0, pos);
+                    if (fs::exists(parent))
+                        paths_[parent] = fs::last_write_time(parent);
+
+                    // delete from paths
                     it = paths_.erase(it);
                 } else {
                     it++;
@@ -228,6 +215,7 @@ void FileWatcher::start() {
 
                 // file / folder creation
                 if (!contains(path_entry.path().string())) {
+
                     if(path_entry.is_directory()) {
                         backup_folder(path_entry.path().string());
                     }
@@ -237,13 +225,16 @@ void FileWatcher::start() {
                     paths_[path_entry.path().string()] = current_file_last_write_time;
 
                 } else {
-                    // file / folder modification
+                    // file  modification
                     if (paths_[path_entry.path().string()] != current_file_last_write_time) {
-                        delete_path(path_entry.path().string());
-                        if(path_entry.is_directory()) {
+                        // folder modification has not meaning since its renaming is considered as folder cancellation
+                        // and then new creation. Modification of his children has not to be taken into account here but
+                        // directly from them
+                        /*if(path_entry.is_directory()) {
                             backup_folder(path_entry.path().string());
-                        }
-                        else if(path_entry.is_regular_file()) {
+                        }*/
+                        if(path_entry.is_regular_file()) {
+                            delete_path(path_entry.path().string());
                             backup_file(path_entry.path().string());
                         }
                         paths_[path_entry.path().string()] = current_file_last_write_time;
