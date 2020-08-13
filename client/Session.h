@@ -81,7 +81,7 @@ public:
             throw (ExceptionBackup("resolve: " + ec.message(), async_resolver_error));
 
         // Set a timeout on the operation
-        stream_.expires_after(std::chrono::seconds(30));
+        stream_.expires_after(std::chrono::seconds(60));
 
         // Make the connection on the IP address we get from a lookup
         stream_.async_connect(
@@ -98,7 +98,7 @@ public:
             throw (ExceptionBackup("connect: " + ec.message(), async_connection_error));
 
         // Set a timeout on the operation
-        stream_.expires_after(std::chrono::seconds(30));
+        stream_.expires_after(std::chrono::seconds(60));
 
         // Send the HTTP request to the remote host
         http::async_write(stream_, req_,

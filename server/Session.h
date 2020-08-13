@@ -90,7 +90,7 @@ public:
 
 
         // Set the timeout.
-        stream_.expires_after(std::chrono::seconds(30));
+        stream_.expires_after(std::chrono::seconds(60));
 
 
 

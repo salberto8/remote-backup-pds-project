@@ -11,6 +11,7 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    // create a folder for each user on the server
     if(!configuration::prepare_environment()){
         return EXIT_FAILURE;
     }

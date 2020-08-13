@@ -39,6 +39,7 @@ void FileWatcher::initialization() {
         }
         else if(path_entry.is_regular_file()) {
             if(!probe_file(path_entry.path().string())) {
+                std::clog << "trying to backup " << path_entry.path().string() << std::endl;
                 backup_file(path_entry.path().string());
             }
         }

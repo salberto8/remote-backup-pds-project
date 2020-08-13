@@ -59,14 +59,18 @@ std::string calculate_digest(std::string path) {
 std::unique_ptr<char[]> encode(const std::string &path) {
     std::size_t original_len = fs::file_size(path);
     std::size_t encoded_len = base64::encoded_size(original_len);
+    std::clog << "orig len "  << original_len << " encoded len " << encoded_len << std::endl;
+
 
     std::unique_ptr<char[]> encoded_file{new char[encoded_len + 1]};
     std::unique_ptr<char[]> original_file{new char[original_len]};
 
     std::ifstream file (path, std::ios::in | std::ios::binary);
     file.read (original_file.get(), original_len);
+    std::clog << " after read " << std::endl;
 
     std::size_t real_len = base64::encode(encoded_file.get(), original_file.get(), original_len);
+    std::clog << "after encode " << std::endl;
     // the resulting string is not null terminated
     encoded_file[real_len] = 0;
 
