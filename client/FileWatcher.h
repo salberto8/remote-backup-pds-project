@@ -28,6 +28,7 @@ private:
 
     // unordered_map: path of the file and its last modification time
     std::unordered_map<std::string, std::filesystem::file_time_type> paths_;
+    std::mutex mutex_paths_ ;
 
     int retry = 3;
 
