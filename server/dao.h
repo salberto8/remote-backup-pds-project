@@ -17,7 +17,6 @@
 //singleton, interface with database
 class Dao{
 
-
     sqlite3* db;
     bool conn_open;
 
@@ -43,6 +42,11 @@ public:
     }
 
     std::optional<std::string> getUserFromToken(const std::string &token);
+    std::optional<std::string> getPasswordFromUser(const std::string &username);
+    bool insertTokenToUser(const std::string &username, const std::string &token);
+    bool deleteTokenToUser(const std::string &username);
+    std::vector<std::string> getAllUsers();
+    void deleteAllTokens();
 
     Dao(const Dao&)= delete;
     Dao& operator=(const Dao&)= delete;

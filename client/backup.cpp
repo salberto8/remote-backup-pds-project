@@ -11,10 +11,11 @@
 
 #include "backup.h"
 
+#define BUF_SIZE 2048
+
+namespace fs = std::filesystem;
 namespace base64 = boost::beast::detail::base64;
 
-
-#define BUF_SIZE 2048
 
 std::string calculate_digest(std::string path) {
     EVP_MD_CTX *md;
@@ -55,18 +56,27 @@ std::string calculate_digest(std::string path) {
     return digest;
 }
 
-std::unique_ptr<char[]> encode(const std::string &original_path) {
-    std::size_t original_len = std::filesystem::file_size(original_path);
+std::unique_ptr<char[]> encode(const std::string &path) {
+    std::size_t original_len = fs::file_size(path);
     std::size_t encoded_len = base64::encoded_size(original_len);
+
     std::unique_ptr<char[]> encoded_file{new char[encoded_len + 1]};
     std::unique_ptr<char[]> original_file{new char[original_len]};
 
-    std::ifstream file (original_path, std::ios::in | std::ios::binary);
+    std::ifstream file (path, std::ios::in | std::ios::binary);
     file.read (original_file.get(), original_len);
 
     std::size_t real_len = base64::encode(encoded_file.get(), original_file.get(), original_len);
+    // the resulting string is not null terminated
     encoded_file[real_len] = 0;
 
-    std::cout<< encoded_file.get()<<std::endl;
     return encoded_file;
+}
+
+std::set<std::string> get_children(const std::string &path) {
+    std::set<std::string> set;
+    for(const fs::directory_entry& entry : fs::directory_iterator(path)) {
+        set.insert(entry.path().filename().string());
+    }
+    return std::move(set);
 }

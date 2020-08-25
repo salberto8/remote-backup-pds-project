@@ -6,12 +6,14 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 #include <pwd.h>
+#include <filesystem>
 
 #include "configuration.h"
+#include "dao.h"
 
 
 namespace po = boost::program_options;
-
+namespace fs = std::filesystem;
 
 
 namespace configuration
@@ -71,6 +73,32 @@ bool configuration::load_config_file(const std::string &config_file)
     } catch(boost::bad_any_cast & e){
         std::cerr << "Bad configuration file, usage:\n" << desc << std::endl;
         return false;
+    }
+    return true;
+}
+
+/**
+ * read all the users present in the database and create a directory for each one (if not already present)
+ * in the backuppath
+ *
+ * @return false if the db returns an empty set of users, true otherwise
+ */
+bool configuration::prepare_environment(){
+    // get dao instance
+    Dao *dao = Dao::getInstance();
+
+    std::vector<std::string> users = dao->getAllUsers();
+
+    if (users.empty())
+        return false;
+
+    for (std::string user: users){
+        std::string path = configuration::backuppath + user;
+
+        if (!fs::is_directory(path)){
+            fs::create_directory(path);
+        }
+
     }
     return true;
 }

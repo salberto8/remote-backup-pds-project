@@ -2,6 +2,7 @@
 
 #include "Listener.h"
 #include "configuration.h"
+#include "authorization.h"
 
 int main() {
 
@@ -10,6 +11,9 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    if(!configuration::prepare_environment()){
+        return EXIT_FAILURE;
+    }
 
     // The io_context is required for all I/O (including network)
     net::io_context ioc{configuration::nthreads};
@@ -31,6 +35,9 @@ int main() {
                 ss << "Exit after signal with code " << sign << std::endl;
                 std::cout << ss.str();
                 ioc.stop();
+
+                // delete tokens of all users
+                deleteAllTokens();
             });
 
 

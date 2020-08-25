@@ -7,15 +7,16 @@
 
 #include <boost/beast/http.hpp>
 
-//#include <mutex>
-//#include <condition_variable>
-
 namespace http = boost::beast::http;       // from <boost/beast/http.hpp>
 
-void handle_response(http::response<http::string_body> *res);
 
 bool probe_file(const std::string& original_path);
-bool backup_file(const std::string& original_path);
+void backup_file(const std::string& original_path);
+bool probe_folder(const std::string& original_path);
+void backup_folder(const std::string& original_path);
+void delete_path(const std::string& original_path);
+void authenticateToServer();
+void logout();
 
 
 #endif //CLIENT_CLIENT_H
