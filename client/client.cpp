@@ -110,7 +110,7 @@ bool send_request(http::verb method, const std::string &abs_path, TargetType typ
         return false;
     }
     else
-        throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
+        throw (ExceptionBackup(res.body(), res.result()));
 }
 
 bool probe_file(const std::string& abs_path) {
@@ -158,7 +158,7 @@ bool probe_file(const std::string& abs_path) {
         return false;
     }
     else {
-        throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
+        throw (ExceptionBackup(res.body(), res.result()));
     }
 }
 
@@ -219,7 +219,7 @@ void authenticateToServer(){
         return;
     }
     else {
-        throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
+        throw (ExceptionBackup(res.body(), res.result()));
     }
 }
 
@@ -240,12 +240,12 @@ void logout(){
 
     if(res.result() == http::status::ok) {
 
-        std::string token{""};
+        std::string token;
         // delete the token from the configuration because invalid
         configuration::token = std::move(token);
 
         return ;
     }
     else
-        throw (ExceptionBackup(res.body(), static_cast<int>(res.result())));
+        throw (ExceptionBackup(res.body(), res.result()));
 }

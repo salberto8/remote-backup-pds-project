@@ -71,7 +71,7 @@ int main() {
     }
     catch (const ExceptionBackup& e) {
         std::cerr << e.what() << ". Error number " << e.getErrorNumber() << std::endl;
-        if(e.getErrorNumber() == async_connection_error)
+        if(e.getErrorType() == async_connection_error)
             std::cerr << "Address and/or port not valid" << std::endl;
         return EXIT_FAILURE;
     }

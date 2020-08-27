@@ -9,6 +9,10 @@
 #include <exception>
 #include <string>
 #include <utility>
+#include <boost/beast/http.hpp>
+
+namespace http = boost::beast::http;       // from <boost/beast/http.hpp>
+
 
 /**  ERROR_NUMBER:
  *   1) async resolver error
@@ -17,26 +21,34 @@
  *   4) async read error
  *   5) async shutdown error
  */
+ enum ErrorType {async_resolver_error,async_connection_error,async_write_error,async_read_error,async_shutdown_error,http_error};
+/*
 #define async_resolver_error 1
 #define async_connection_error 2
 #define async_write_error 3
 #define async_read_error 4
 #define async_shutdown_error 5
+*/
 
 /**  ERROR_CATEGORY:
  *   0)  async error
  *   10) http error
  */
+ /*
 #define async_error 0
 #define http_error 10
-
+*/
 
 class ExceptionBackup: virtual public std::exception {
 protected:
+    /*
     int error_number;               ///< Error number
     int error_category;             ///< Error category
+    */
     std::string error_message;      ///< Error message
 
+    ErrorType error_type;
+    http::status http_error_number;
 public:
 
     /** Constructor (C++ STL string, int).
@@ -44,16 +56,18 @@ public:
      *  @param err_num Error number
      */
     explicit
-    ExceptionBackup(std::string  msg, int err_num):
-            error_number(err_num),
-            error_message(std::move(msg))
-    {
-        if(err_num < 10)
-            error_category = async_error;
-        else
-            error_category = http_error;
-    }
+    ExceptionBackup(std::string  msg, ErrorType type):
+            error_type(type),
+            error_message(std::move(msg)),
+            http_error_number(http::status::unknown)
+    {}
 
+    explicit
+    ExceptionBackup(std::string  msg, http::status http_error_number):
+            error_type(http_error),
+            error_message(std::move(msg)),
+            http_error_number(http_error_number)
+    {}
     /** Destructor.
      */
     ~ExceptionBackup() noexcept override = default;
@@ -67,18 +81,21 @@ public:
         return error_message.c_str();
     }
 
-    /** Returns error number.
-     *  @return #error_number
-     */
+
+
     virtual int getErrorNumber() const noexcept {
-        return error_number;
+        if(error_type == http_error)
+            return static_cast<int>(http_error_number);
+        else
+            return error_type;
     }
 
-    /** Returns error category.
- *  @return #error_category
- */
-    virtual int getErrorCategory() const noexcept {
-        return error_category;
+    virtual ErrorType getErrorType() const noexcept {
+        return error_type;
+    }
+
+    virtual int getHttpError() const noexcept {
+        return static_cast<int>(http_error_number);
     }
 };
 

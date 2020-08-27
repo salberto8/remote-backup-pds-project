@@ -172,7 +172,7 @@ bool FileWatcher::check_connection_and_retry() {
         std::this_thread::sleep_for(std::chrono::seconds(30));
 
         try {
-            authenticateToServer();
+            //authenticateToServer();
             // the server connection is active
             initialization();
             return true;
@@ -180,7 +180,7 @@ bool FileWatcher::check_connection_and_retry() {
         catch (const ExceptionBackup& e) {
             // server error or connection lost
             std::cerr << e.what() << ". Error number " << e.getErrorNumber() << std::endl;
-            if(e.getErrorCategory() == http_error)
+            if(e.getErrorType() == http_error)
                 retry--;
         }
     }
