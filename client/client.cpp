@@ -12,19 +12,19 @@
 #include "Session.h"
 
 // define the target for using the server API
-#define probefile "/probefile/"
-#define probefolder "/probefolder/"
-#define backup "/backup/"
+#define api_probefile "/probefile/"
+#define api_probefolder "/probefolder/"
+#define api_backup "/backup/"
 
 // define folder and file standards
-#define folder 1
-#define file 2
+enum TargetType { probefolder, probefile, backupfile, backupfolder, delete_ };
+
 
 
 using json = nlohmann::json;
 
 void replaceSpaces(std::string &str);
-bool send_request(http::verb method, const char* target, const std::string &abs_path, int type);
+bool send_request(http::verb method, const std::string &abs_path, TargetType type);
 
 
 void replaceSpaces(std::string &str) {
@@ -55,7 +55,7 @@ void replaceSpaces(std::string &str) {
     }
 }
 
-bool send_request(http::verb method, const char* target, const std::string &abs_path, int type) {
+bool send_request(http::verb method, const std::string &abs_path, TargetType type) {
     http::request<http::string_body> req;
     http::response<http::string_body> res;
     res.result(http::status::unknown);
@@ -68,16 +68,23 @@ bool send_request(http::verb method, const char* target, const std::string &abs_
 
     // prepare the request message
     req.method(method);
+
+    std::string target;
+    switch (type){
+        case probefolder : target = api_probefolder; break;
+        case probefile : target = api_probefile; break;
+        case backupfile :  case backupfolder : case delete_ : target = api_backup; break;
+    }
     req.target(target + relative_path);
 
-    if(std::strcmp(target, probefolder) == 0) {
+    if(type == probefolder) {
         std::set<std::string> children_set = get_children(abs_path);
         j["children"] = children_set;
     }
-    else if(std::strcmp(target, backup) == 0 && type == folder) {
+    else if(type == backupfolder) {
         j["type"] = "folder";
     }
-    else if(std::strcmp(target, backup) == 0 && type == file) {
+    else if(type == backupfile) {
         auto encoded_file = encode(abs_path);
         j["type"] = "file";
         j["encodedfile"] = encoded_file.get();
@@ -118,7 +125,7 @@ bool probe_file(const std::string& abs_path) {
 
     // prepare the request message
     req.method(http::verb::get);
-    req.target(probefile + relative_path);
+    req.target(api_probefile + relative_path);
 
     net::io_context ioc;
     // Launch the asynchronous operation
@@ -156,20 +163,20 @@ bool probe_file(const std::string& abs_path) {
 }
 
 void backup_file(const std::string& abs_path) {
-    send_request(http::verb::post, backup, abs_path, file);
+    send_request(http::verb::post, abs_path, backupfile);
 }
 
 bool probe_folder(const std::string& abs_path) {
-    return send_request(http::verb::post, probefolder, abs_path, folder);
+    return send_request(http::verb::post, abs_path, probefolder);
 }
 
 void backup_folder(const std::string& abs_path) {
-    send_request(http::verb::post, backup, abs_path, folder);
+    send_request(http::verb::post, abs_path, backupfolder);
 }
 
 void delete_path(const std::string& abs_path) {
     // the delete method is valid for both folders and files
-    send_request(http::verb::delete_, backup, abs_path, 0);
+    send_request(http::verb::delete_, abs_path, delete_);
 }
 
 void authenticateToServer(){
