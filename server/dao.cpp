@@ -189,6 +189,10 @@ std::vector<std::string> Dao::getAllUsers(){
     }
 }
 
+/**
+ * delete tokens of all users in the db
+ *
+ */
 void Dao::deleteAllTokens(){
     if(!conn_open)
         return ;

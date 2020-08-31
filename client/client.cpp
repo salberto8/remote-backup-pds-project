@@ -28,30 +28,10 @@ bool send_request(http::verb method, const std::string &abs_path, TargetType typ
 
 
 void replaceSpaces(std::string &str) {
-    // Getting the length of the string, counting the number of spaces
-    int strLen = str.length();
-    int i, count = 0;
-    for (i = 0; i <= strLen; i++) {
-        if(str[i]==' ')
-            count++;
-    }
+    int pos;
 
-    // Determining the new length needed to allocate for replacement characters '%20'
-    int newLength = strLen + count * 2;
-
-    str.resize(newLength);
-    for (i = strLen - 1; i >= 0; i--) {
-        if (str[i] == ' ') {
-            str[newLength - 1] = '0';
-            str[newLength - 2] = '2';
-            str[newLength - 3] = '%';
-            newLength = newLength - 3;
-        }
-
-        else {
-            str[newLength - 1] = str[i];
-            newLength = newLength -1;
-        }
+    while ((pos=str.find(" "))!= std::string::npos){
+        str.replace(pos, 1, "%20");
     }
 }
 

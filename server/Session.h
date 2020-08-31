@@ -57,8 +57,7 @@ class Session : public std::enable_shared_from_this<Session>
 
 public:
     // Take ownership of the stream
-    explicit Session(
-            tcp::socket&& socket)
+    explicit Session(tcp::socket&& socket)
             : stream_(std::move(socket))
             , lambda_(*this)
     {

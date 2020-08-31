@@ -1,7 +1,4 @@
 #include <iostream>
-#include <boost/asio.hpp>
-#include <boost/beast.hpp>
-
 #include <csignal>
 
 #include "configuration.h"
@@ -22,31 +19,11 @@ void signalHandler( int signum ) {
 }
 
 int main() {
-    /*// The io_context is required for all I/O (including network)
-    boost::asio::io_context io_context;
-    // Capture SIGINT and SIGTERM
-    // This code allow to perform a clean shutdown of the server (using a signal or ctrl+C)
-    boost::asio::signal_set signals(io_context, SIGINT, SIGTERM);
 
-    signals.async_wait(
-            [&io_context](boost::beast::error_code const& ec, int sign)
-            {
-                // send logout request to server before closing client
-                logout();
-
-                // Stop the `io_context`. This will cause `run()`
-                // to return immediately, eventually destroying the
-                // `io_context` and all of the sockets in it.
-                std::stringstream ss;
-                ss << "Exit after signal with code " << sign << std::endl;
-                std::cout << ss.str();
-                io_context.stop();
-
-            });
-
-    std::thread t([&io_context]{ io_context.run(); });*/
+    // set handler for signals SIGINT and SIGTERM in order to manage them correctly
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
+
     try {
         // load the config file
         if(!configuration::load_config_file("backup.conf")){

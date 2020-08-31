@@ -7,9 +7,7 @@
 
 
 #include <string>
-//#include <boost/asio.hpp>
 
-//namespace net = boost::asio;
 
 namespace configuration
 {

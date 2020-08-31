@@ -69,9 +69,11 @@ FileWatcher::FileWatcher(const std::string& path_to_watch, std::chrono::duration
     }
     catch (const ExceptionBackup& e) {
         // server error or connection lost
-        std::cerr << e.what() << ". Error number " << e.getErrorNumber() << std::endl;
+        std::string err = e.what();
+        err.append(". Error number " + e.getErrorNumber());
+        myout(err);
         if(check_connection_and_retry())
-            std::cout << "Connection is back" << std::endl;
+            myout("Connection is back");
     }
 }
 
@@ -81,7 +83,7 @@ void FileWatcher::initialization() {
 
     std::vector<std::thread> threads_;
 
-    // counter of possible leaf directories added to the queue (and decremented when it is sure is a leaf)
+    // counter of leaf directories in the queue (when the counter comes back to 0, it means that all the tree of directories has been watched)
     std::atomic<int> count_leaves(0);
 
     // delete any files or folders no longer present in the root folder
@@ -90,8 +92,9 @@ void FileWatcher::initialization() {
     // erase all the elements in the path_ map
     paths_.clear();
 
-    // first insert in the queue the root directory
+    // firstly insert in the queue the root directory
     jobs.put(path_to_watch);
+    // increment the counter of leaf directories present in the fifo queue
     count_leaves.fetch_add(1);
 
     // 5 threads
@@ -104,7 +107,7 @@ void FileWatcher::initialization() {
                     // safe because only a thread will receive that path
                     fs::path path_entry = path_.value();
 
-                    // if 0 means no-sub directories, if 1 means one sub-directory, if 2 means more then 1 sub-directories
+                    // counter of direct child-directories of the current directory
                     int directories = 0;
 
                     myout("sending probe folder of " + path_entry.string());
@@ -112,7 +115,7 @@ void FileWatcher::initialization() {
                         myout("probe failed, sending backup folder " + path_entry.string());
                         backup_folder(path_entry.string());
                     }
-                    // add the folder to the paths_ unordered_map
+                    // add the folder to the paths_ unordered_map or just update last write time if already present
                     mutex_paths_.lock();
                     paths_[path_entry.string()] = fs::last_write_time(path_entry);
                     mutex_paths_.unlock();
@@ -125,21 +128,23 @@ void FileWatcher::initialization() {
                                 myout("probe failed, sending backup file " + p.path().string());
                                 backup_file(p.path().string());
                             }
-                            // add the file to the paths_ unordered_map
+                            // add the file to the paths_ unordered_map or just update last write time
+                            // if already present
                             mutex_paths_.lock();
                             paths_[p.path().string()] = fs::last_write_time(p);
                             mutex_paths_.unlock();
                         } else if (p.is_directory()) {
-                            if (directories == 0 || directories == 1)
-                                directories++;
-                            else
-                                // add to count_leaves only if more then one sub-directory
+                            directories++;
+                            if (directories >= 2) {
+                                // increment count_leaves only if more then one sub-directory
                                 count_leaves.fetch_add(1);
+                            }
                             jobs.put(p.path());
                         }
                     }
 
-                    // if there are no sub-directories, the actual directory is really a leaf, so decrement counter
+                    // if there are no sub-directories, the actual directory is really a leaf, decrement counter
+                    // because finished to watch it
                     if (directories == 0)
                         count_leaves.fetch_sub(1);
 

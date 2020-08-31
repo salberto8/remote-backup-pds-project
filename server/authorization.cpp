@@ -7,7 +7,6 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <boost/beast/core/detail/base64.hpp>
-#include <iomanip>
 #include <iostream>
 
 #define MAX_BUF 2048
