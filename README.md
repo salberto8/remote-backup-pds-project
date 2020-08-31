@@ -63,3 +63,14 @@ username=user1
 - boost 1.73.0 (at least program_options must be built)
 - nlohmann/json (nlohmann-json3-dev)
 - openssl (libssl-dev)
+
+
+## Users
+
+In the database there are three users with these credentials:
+
+| username | password |
+| -- | -- |
+| user1   | pwd1 |
+| user2 | password2 | 
+| user3 | password3 |
