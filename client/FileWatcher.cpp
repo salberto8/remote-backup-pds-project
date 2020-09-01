@@ -69,9 +69,10 @@ FileWatcher::FileWatcher(const std::string& path_to_watch, std::chrono::duration
     }
     catch (const ExceptionBackup& e) {
         // server error or connection lost
-        std::string err = e.what();
-        err.append(". Error number " + e.getErrorNumber());
-        myout(err);
+
+        std::stringstream ss;
+        ss << e.what() <<". Error number " << e.getErrorNumber()  << std::endl;
+        myout(ss.str());
         if(check_connection_and_retry())
             myout("Connection is back");
     }
@@ -81,7 +82,11 @@ void FileWatcher::initialization() {
     // object implementing a fifo queue of directories and sub-directories present in the path to watch
     Jobs<std::filesystem::path> jobs;
 
+    // number of threads equal to the number of cores of the machine
+    unsigned int n_threads = std::thread::hardware_concurrency();
+
     std::vector<std::thread> threads_;
+    threads_.resize(n_threads);
 
     // counter of leaf directories in the queue (when the counter comes back to 0, it means that all the tree of directories has been watched)
     std::atomic<int> count_leaves(0);
@@ -97,8 +102,8 @@ void FileWatcher::initialization() {
     // increment the counter of leaf directories present in the fifo queue
     count_leaves.fetch_add(1);
 
-    // 5 threads
-    for(int i=0; i<5; i++){
+
+    for(int i=0; i<n_threads; i++){
         threads_.push_back(std::thread([&jobs, this, &count_leaves, i](){
             while(true){
                 // take a job from the queue
