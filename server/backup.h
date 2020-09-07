@@ -1,7 +1,3 @@
-//
-// Created by stealbi on 14/07/20.
-//
-
 #ifndef SERVER_PROGETTO_BACKUP_H
 #define SERVER_PROGETTO_BACKUP_H
 
@@ -22,13 +18,10 @@
 #include <fstream>
 #include <set>
 
-
-
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
-
 
 bool save_file(const std::string &user, const std::string &path, std::unique_ptr<char []> &&raw_file, std::size_t n);
 std::optional<std::string> get_file_digest(const std::string &user, const std::string& file_path);

@@ -1,7 +1,3 @@
-//
-// Created by stealbi on 20/07/20.
-//
-
 #ifndef SERVER_CONFIGURATION_H
 #define SERVER_CONFIGURATION_H
 
@@ -21,7 +17,6 @@ namespace configuration
     bool load_config_file(const std::string &config_file);
     bool prepare_environment();
 }
-
 
 
 #endif //SERVER_CONFIGURATION_H

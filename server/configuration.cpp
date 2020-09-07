@@ -1,7 +1,3 @@
-//
-// Created by stealbi on 20/07/20.
-//
-
 #include <fstream>
 #include <iostream>
 #include <boost/program_options.hpp>
@@ -11,10 +7,8 @@
 #include "configuration.h"
 #include "dao.h"
 
-
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
-
 
 namespace configuration
 {
@@ -60,9 +54,6 @@ bool configuration::load_config_file(const std::string &config_file)
 
     po::variables_map vm;
     po::store(po::parse_config_file(conf_file, desc), vm);
-    //po::notify(vm);
-
-
 
     try {
         configuration::address = net::ip::make_address(vm["address"].as<std::string>());
@@ -71,9 +62,9 @@ bool configuration::load_config_file(const std::string &config_file)
         configuration::backuppath = vm["backuppath"].as<std::string>();
         configuration::dbpath = vm["dbpath"].as<std::string>();
 
-        char end_slash = 47; // "/"
-        if(configuration::backuppath.back() != end_slash) {
-            configuration::backuppath = configuration::backuppath + end_slash;
+        //add slash in the end if not present
+        if(configuration::backuppath.back() != '/') {
+            configuration::backuppath = configuration::backuppath + '/';
         }
     } catch(boost::bad_any_cast & e){
         std::cerr << "Bad configuration file, usage:\n" << desc << std::endl;
@@ -97,13 +88,12 @@ bool configuration::prepare_environment(){
     if (users.empty())
         return false;
 
-    for (std::string user: users){
+    for (const std::string& user: users){
         std::string path = configuration::backuppath + user;
 
         if (!fs::is_directory(path)){
             fs::create_directory(path);
         }
-
     }
     return true;
 }

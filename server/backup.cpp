@@ -1,17 +1,12 @@
-//
-// Created by stealbi on 16/07/20.
-//
+#include <openssl/evp.h>
+#include <filesystem>
 
 #include "backup.h"
 #include "configuration.h"
 
-#include <openssl/evp.h>
-#include <filesystem>
-
 namespace fs = std::filesystem;
 
 #define BUF_SIZE 2048
-
 
 /**
  * compute the absolute path from the username and the relative path
@@ -108,8 +103,6 @@ bool new_directory(const std::string& user, const std::string& path){
     return fs::create_directory(get_abs_path(user,path));
 }
 
-
-
 /**
  * remove all the children of the directory not in the children set
  * @param user username of the authenticated user
@@ -140,7 +133,6 @@ bool probe_directory(const std::string& user, const std::string& path, const std
 
     return true;
 }
-
 
 /**
  * remove file or folder (recursively!)

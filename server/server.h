@@ -1,7 +1,3 @@
-//
-// Created by stealbi on 14/07/20.
-//
-
 #ifndef SERVER_PROGETTO_SERVER_H
 #define SERVER_PROGETTO_SERVER_H
 
@@ -21,7 +17,6 @@
 #include <thread>
 #include <vector>
 #include <nlohmann/json.hpp>
-
 
 #include "backup.h"
 #include "authorization.h"
@@ -44,65 +39,53 @@ void replaceSpaces(std::string &str);
 // request. The type of the response object depends on the
 // contents of the request, so the interface requires the
 // caller to pass a generic lambda for receiving the response.
-template<
-        class Body, class Allocator,
-        class Send>
-void handle_request(
-        http::request<Body, http::basic_fields<Allocator>>&& req,
-        Send&& send)
-{
+template<class Body, class Allocator, class Send>
+void handle_request(http::request<Body, http::basic_fields<Allocator>>&& req,Send&& send){
+
+    /*
+    std::cout << "sleeping.." <<std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    */
 
     // Returns a bad request response
     auto const bad_request =
-            [&req](beast::string_view why)
-            {
+            [&req](const std::string &why){
                 http::response<http::string_body> res{http::status::bad_request, req.version()};
-                //res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
                 res.set(http::field::content_type, "text/plain");
-                res.keep_alive(req.keep_alive());
-                res.body() = std::string(why);
+                res.body() = why;
                 res.prepare_payload();
                 return res;
             };
 
     // Returns a not found response
     auto const not_found =
-            [&req]()
-            {
+            [&req](){
                 http::response<http::empty_body> res{http::status::not_found, req.version()};
-                res.keep_alive(req.keep_alive());
                 return res;
             };
 
     // Returns a server error response
     auto const server_error =
-            [&req](beast::string_view what)
-            {
+            [&req](const std::string &what){
                 http::response<http::string_body> res{http::status::internal_server_error, req.version()};
-                //res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
                 res.set(http::field::content_type, "text/plain");
-                res.keep_alive(req.keep_alive());
-                res.body() = "An error occurred: '" + std::string(what) + "'";
+                res.body() = "An error occurred: '" + what + "'";
                 res.prepare_payload();
                 return res;
             };
 
     auto const okay_response =
-            [&req]()
-            {
+            [&req](){
                 http::response<http::empty_body> res{http::status::ok, req.version()};
-                res.keep_alive(req.keep_alive());
                 return res;
             };
 
-    auto const forbidden_response =
-            [&req](beast::string_view what)
+    auto const unauthorized_response =
+            [&req](const std::string &what)
             {
-                http::response<http::string_body> res{http::status::forbidden, req.version()};
-                //res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+                http::response<http::string_body> res{http::status::unauthorized, req.version()};
                 res.set(http::field::content_type, "text/plain");
-                res.keep_alive(req.keep_alive());
-                res.body() = "Forbidden: '" + std::string(what) + "'";
+                res.body() = "Unauthorized: '" + what + "'";
                 res.prepare_payload();
                 return res;
             };
@@ -113,11 +96,14 @@ void handle_request(
         req.method() != http::verb::delete_)
         return send(bad_request("Unknown HTTP-method"));
 
+
     std::string req_path = req.target().to_string();
 
     //avoid path traversal
     if(req_path.find("..")!=std::string::npos)
         return send(bad_request("Bad path"));
+    // substitute %20 with spaces
+    replaceSpaces(req_path);
 
     // POST (login)
     if(req.method() == http::verb::post && req_path.rfind("/login", 0) == 0) {
@@ -131,7 +117,7 @@ void handle_request(
             username = j.at("username");
             password = j.at("password");
         }
-        catch (json::out_of_range &e) {
+        catch (json::exception &e) {
             //missing login parameters
             return send(bad_request("Missing login parameters"));
         }
@@ -147,41 +133,34 @@ void handle_request(
                 return send(server_error("Error in creating token to user"));
 
             // send token
-            http::response<http::string_body> res{
-                    http::status::ok,
-                    req.version(),
-                    token};
+            http::response<http::string_body> res{http::status::ok,req.version(),token};
             res.set(http::field::content_type, "text/plain");
             res.content_length(token.size());
-            res.keep_alive(req.keep_alive());
             return send(std::move(res));
         } else {
             // if the verification of the password fails send error
-            return send(server_error("Authentication failed"));
+            return send(unauthorized_response("Authentication failed"));
         }
     }
 
     //check if authorized
     auto auth = req[http::field::authorization];
     if(auth.empty()){
-        std::cout << "token empty" << std::endl;
-        return send(forbidden_response("Token needed"));
+        //std::clog << "No token" << std::endl;
+        return send(unauthorized_response("Token needed"));
     }
     std::string token = auth.to_string();
     std::optional<std::string> user = verifyToken(token);
     if (!user.has_value()) {
-        std::cout << "invalid token" << std::endl;
-        return send(forbidden_response("Invalid token"));
+        //std::clog << "Invalid token: " + token << std::endl;
+        return send(unauthorized_response("Invalid token"));
     }
 
     //POST (authenticated)
     if(req.method() == http::verb::post){
         //if starts with backup
         if (req_path.rfind("/backup/", 0) == 0){
-
             std::string path = req_path.substr(8);
-            // substitute %20 with spaces
-            replaceSpaces(path);
 
             //std::clog << " post /backup " << path << std::endl;
 
@@ -189,10 +168,8 @@ void handle_request(
 
             std::string type;
             try{
-                //path = j.at("path");
                 type = j.at("type");
-            }catch(json::out_of_range& e){
-                //missing parameters
+            } catch(json::exception & e){
                 return send(bad_request("Missing parameters"));
             }
 
@@ -200,13 +177,9 @@ void handle_request(
                 std::string encodedfile;
                 try{
                     encodedfile = j.at("encodedfile");
-                }catch(json::out_of_range& e){
-                    //missing parameters
+                } catch(json::exception & e){
                     return send(bad_request("Missing parameters"));
                 }
-
-
-                //should check if valid base64?
 
                 std::size_t max_l = base64::decoded_size(encodedfile.size());
                 std::unique_ptr<char[]> raw_file{new char[max_l]};
@@ -235,18 +208,14 @@ void handle_request(
 
         if (req_path.rfind("/probefolder/", 0) == 0) {
             std::string path = req_path.substr(13);
-            // substitute %20 with spaces
-            replaceSpaces(path);
 
             //std::clog << "post /probefolder " << path << std::endl;
             json j = json::parse(req.body());
 
             std::set<std::string> children;
             try{
-                //path = j.at("path");
                 j.at("children").get_to(children);
             }catch(json::exception & e){
-                //missing parameters
                 return send(bad_request("Bad request body"));
             }
 
@@ -263,17 +232,16 @@ void handle_request(
                 return send(not_found());
             }
         }
-
         if (req_path.rfind("/logout", 0) == 0){
-
             if (logoutUser(user.value())) {
                 return send(okay_response());
             } else {
                 return send(server_error("Error during logout"));
             }
-
         }
-        return send(bad_request("Illegal request"));
+
+        //all other POST requests
+        return send(not_found());
     }
 
     // GET
@@ -283,22 +251,14 @@ void handle_request(
             std::string path = req_path.substr(11);
             //std::clog << "get /probefile " << path << std::endl;
 
-            // substitute %20 with space
-            replaceSpaces(path);
-
             std::optional<std::string> digest_opt = get_file_digest(user.value(), path);
 
             if(digest_opt){
                 //file exists
                 std::string digest = digest_opt.value();
-                http::response<http::string_body> res{
-                        http::status::ok,
-                        req.version(),
-                        digest};
-                //res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+                http::response<http::string_body> res{http::status::ok, req.version(), digest};
                 res.set(http::field::content_type, "text/plain");
                 res.content_length(digest.size());
-                res.keep_alive(req.keep_alive());
                 return send(std::move(res));
             } else {
                 //file not found
@@ -315,17 +275,12 @@ void handle_request(
         if (req_path.rfind("/backup/", 0) == 0){
             std::string path = req_path.substr(8);
 
-
             // avoid root cancellation
             if (path.empty()){
                 return send(bad_request("Bad path"));
             }
-            // substitute %20 with spaces
-            replaceSpaces(path);
 
             //std::clog << "delete request to "  << path << std::endl;
-
-
 
             if(backup_delete(user.value(),path)) {
                 //std::clog << "delete ok "<< path << std::endl;
@@ -336,8 +291,7 @@ void handle_request(
                 return send(not_found());
             }
         }
-
-        return send(bad_request("Illegal request"));
+        return send(not_found());
     }
 }
 

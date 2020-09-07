@@ -27,31 +27,27 @@ int main() {
     // This code allow to perform a clean shutdown of the server (using a signal or ctrl+C)
     net::signal_set signals(ioc, SIGINT, SIGTERM);
     signals.async_wait(
-            [&ioc](beast::error_code const& ec, int sign)
-            {
-                // Stop the `io_context`. This will cause `run()`
-                // to return immediately, eventually destroying the
-                // `io_context` and all of the sockets in it.
-                std::stringstream ss;
-                ss << "Exit after signal with code " << sign << std::endl;
-                std::cout << ss.str();
-                ioc.stop();
+        [&ioc](beast::error_code const& ec, int sign){
+            // Stop the `io_context`. This will cause `run()`
+            // to return immediately, eventually destroying the
+            // `io_context` and all of the sockets in it.
+            std::stringstream ss;
+            ss << "Exit after signal with code " << sign << std::endl;
+            std::cout << ss.str();
+            ioc.stop();
 
-                // delete tokens of all users
-                deleteAllTokens();
-            });
+            // delete tokens of all users
+            deleteAllTokens();
+    });
 
 
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;
     v.reserve(configuration::nthreads - 1);
     for (auto i = configuration::nthreads - 1; i > 0; --i)
-        v.emplace_back(
-                [&ioc] {
-                    ioc.run();
-                });
-    ioc.run();
+        v.emplace_back([&ioc] {ioc.run();});
 
+    ioc.run();
 
     //if run() returned -> a signal was sent (exit)
     // Block until all the threads exit

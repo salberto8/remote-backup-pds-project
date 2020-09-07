@@ -1,7 +1,3 @@
-//
-// Created by stealbi on 15/07/20.
-//
-
 #include "authorization.h"
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
@@ -27,7 +23,6 @@ std::string compute_password_digest(std::string password) {
     char hex_digest[EVP_MAX_MD_SIZE*2+1];
     int n,i;
     unsigned int md_len;
-
 
     md = EVP_MD_CTX_new();
     EVP_MD_CTX_init(md);
@@ -109,20 +104,17 @@ std::string createToken(int n){
 bool saveTokenToUser(std::string &username, std::string &token){
     // get dao instance
     Dao *dao = Dao::getInstance();
-
     return dao->insertTokenToUser(username, token);
 }
 
 bool logoutUser(std::string &username){
     // get dao instance
     Dao *dao = Dao::getInstance();
-
     return dao->deleteTokenToUser(username);
 }
 
 void deleteAllTokens(){
     // get dao instance
     Dao *dao = Dao::getInstance();
-
     dao->deleteAllTokens();
 }

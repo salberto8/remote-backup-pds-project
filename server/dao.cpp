@@ -1,13 +1,9 @@
-//
-// Created by stealbi on 20/07/20.
-//
-
 #include "dao.h"
 
 Dao* Dao::instance= nullptr;
 
 /**
- * return the username athenticated with the given token
+ * return the username authenticated with the given token
  *
  * @param token the authentication token
  * @return the authenticated username if present, a empty optional otherwise
@@ -16,16 +12,18 @@ std::optional<std::string> Dao::getUserFromToken(const std::string &token) {
     if(!conn_open)
         return {};
 
-
     sqlite3_stmt* stmt = nullptr;
 
     int rc = sqlite3_prepare_v2( db, "SELECT username FROM users WHERE token = ?", -1, &stmt, 0 );
     if ( rc != SQLITE_OK )
         return {};
 
-
     //  Bind-parameter indexing is 1-based.
     rc = sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr); // Bind first parameter.
+    if ( rc != SQLITE_OK ){
+        sqlite3_finalize( stmt );
+        return {};
+    }
 
     rc = sqlite3_step( stmt );
 
@@ -50,16 +48,18 @@ std::optional<std::string> Dao::getPasswordFromUser(const std::string &username)
     if(!conn_open)
         return {};
 
-
     sqlite3_stmt* stmt = nullptr;
 
     int rc = sqlite3_prepare_v2( db, "SELECT hash FROM users WHERE username = ?", -1, &stmt, 0 );
     if ( rc != SQLITE_OK )
         return {};
 
-
     //  Bind-parameter indexing is 1-based.
     rc = sqlite3_bind_text( stmt, 1, username.c_str(), username.size(), nullptr); // Bind first parameter.
+    if ( rc != SQLITE_OK ){
+        sqlite3_finalize( stmt );
+        return {};
+    }
 
     rc = sqlite3_step( stmt );
 
@@ -91,21 +91,19 @@ bool Dao::insertTokenToUser(const std::string &username, const std::string &toke
     if ( rc != SQLITE_OK )
         return false;
 
-
     //  Bind-parameter indexing is 1-based.
-    if ( sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr) != SQLITE_OK) // Bind first parameter.
-    {
+    rc = sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr); // Bind first parameter.
+    if ( rc != SQLITE_OK ){
         sqlite3_finalize( stmt );
         return false;
     }
-    if ( sqlite3_bind_text( stmt, 2, username.c_str(), username.size(), nullptr) != SQLITE_OK)  // Bind second parameter.
-    {
+    rc = sqlite3_bind_text(stmt, 2, username.c_str(), username.size(), nullptr);  // Bind second parameter.
+    if ( rc != SQLITE_OK ){
         sqlite3_finalize( stmt );
         return false;
     }
 
     rc = sqlite3_step( stmt );
-
     sqlite3_finalize( stmt );
 
     if( rc  != SQLITE_DONE ) { // if query has been executed without errors.
@@ -124,27 +122,25 @@ bool Dao::deleteTokenToUser(const std::string &username){
         return {};
 
     sqlite3_stmt* stmt = nullptr;
-    std::string token{""};
+    std::string token;
 
     int rc = sqlite3_prepare_v2( db, "UPDATE users SET token=? WHERE username = ?", -1, &stmt, 0 );
     if ( rc != SQLITE_OK )
         return false;
 
-
     //  Bind-parameter indexing is 1-based.
-    if ( sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr) != SQLITE_OK) // Bind first parameter.
-    {
+    rc = sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr); // Bind first parameter.
+    if ( rc != SQLITE_OK ){
         sqlite3_finalize( stmt );
         return false;
     }
-    if ( sqlite3_bind_text( stmt, 2, username.c_str(), username.size(), nullptr) != SQLITE_OK)  // Bind second parameter.
-    {
+    rc = sqlite3_bind_text( stmt, 2, username.c_str(), username.size(), nullptr);  // Bind second parameter.
+    if ( rc != SQLITE_OK ){
         sqlite3_finalize( stmt );
         return false;
     }
 
     rc = sqlite3_step( stmt );
-
     sqlite3_finalize( stmt );
 
     if( rc  != SQLITE_DONE ) { // if query has been executed without errors.
@@ -163,7 +159,6 @@ std::vector<std::string> Dao::getAllUsers(){
     if(!conn_open)
         return {};
 
-
     sqlite3_stmt* stmt = nullptr;
 
     int rc = sqlite3_prepare_v2( db, "SELECT username FROM users ", -1, &stmt, 0 );
@@ -175,7 +170,6 @@ std::vector<std::string> Dao::getAllUsers(){
         result.push_back(res);
     }
     if(rc != SQLITE_DONE) {
-        //this error handling could be done better, but it works
         printf("ERROR: while performing sql: %s\n", sqlite3_errmsg(db));
         printf("ret_code = %d\n", rc);
         return {};
@@ -198,27 +192,21 @@ void Dao::deleteAllTokens(){
         return ;
 
     sqlite3_stmt* stmt = nullptr;
-    std::string token{""};
+    std::string token;
 
     int rc = sqlite3_prepare_v2( db, "UPDATE users SET token=? ", -1, &stmt, 0 );
     if ( rc != SQLITE_OK )
-        return ;
+        return;
 
     //  Bind-parameter indexing is 1-based.
-    if ( sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr) != SQLITE_OK) // Bind first parameter.
-    {
+    rc = sqlite3_bind_text( stmt, 1, token.c_str(), token.size(), nullptr);  // Bind first parameter.
+    if( rc != SQLITE_OK ){
         sqlite3_finalize( stmt );
         return;
     }
 
     rc = sqlite3_step( stmt );
-
     sqlite3_finalize( stmt );
-
-    if( rc  != SQLITE_DONE ) { // if query has been executed without errors.
-        return ;
-    }
-    return ;
 }
 
 /**
@@ -233,9 +221,21 @@ Dao::Dao() {
         conn_open = false;
         return;
     }
-
     conn_open = true;
+}
 
+Dao::~Dao() {
+    if(conn_open)
+        sqlite3_close(db);
+}
+
+Dao *Dao::getInstance() {
+
+    std::call_once(inited, []() {
+        instance = new Dao;
+    });
+
+    return instance;
 }
 
 std::once_flag Dao::inited;

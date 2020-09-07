@@ -16,7 +16,7 @@ add_executable(server
         main.cpp
         server.cpp
         server.h
-        Session.h dao.h configuration.cpp configuration.h dao.cpp)
+        Session.h dao.h configuration.cpp configuration.h dao.cpp Session.cpp)
 
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
