@@ -81,12 +81,6 @@ bool verifyUserPassword(const std::string& username, const std::string& password
 std::string createToken(int n){
     unsigned char random_string[MAX_BUF];
 
-    int rc = RAND_load_file("/dev/random", 32); //good for the seed
-    if(rc != 32) {
-        printf("Couldn't initialize PRNG\n");
-        exit(1);
-    }
-
     RAND_bytes(random_string, n);
 
     // convert the bytes in string format
