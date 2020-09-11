@@ -1,6 +1,11 @@
-# progetto-pds
+# Project m1: Remote backup
+
+Authors: s269216 Stefano Alberto, s272609 Noemi Daniele, s278929 Giacomo Brusamolin
+
+Date: 11/09/2020
 
 ## Server
+
 ### Configuration
 Before the first start you should create a config file called backupserver.conf in your home directory.
 Here is an example:
@@ -48,6 +53,7 @@ See examples in test_server folder
 - sqlite (libsqlite3-dev)
   
 ## Client
+
 ### Configuration
 Before the first start you should create a config file called backup.conf in your home directory.
 Here is an example:
