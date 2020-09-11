@@ -13,7 +13,7 @@
 
 std::mutex om;
 
-void myout(std::string msg){
+void myout(const std::string& msg){
     std::lock_guard og(om);
     std::clog<<msg<<std::endl;
 }
@@ -104,7 +104,7 @@ void FileWatcher::initialization() {
 
 
     for(int i=0; i<n_threads; i++){
-        threads_.push_back(std::thread([&jobs, this, &count_leaves, i](){
+        threads_.emplace_back([&jobs, this, &count_leaves, i](){
             while(true){
                 // take a job from the queue
                 std::optional<fs::path>  path_ = jobs.get();
@@ -163,7 +163,7 @@ void FileWatcher::initialization() {
                     break;
                 }
             }
-        }));
+        });
     }
 
     for (auto &t: threads_) {
