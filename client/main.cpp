@@ -2,8 +2,8 @@
 #include <csignal>
 
 #include "configuration.h"
-#include "FileWatcher.h"
 #include "client.h"
+#include "FileWatcher.h"
 #include "ExceptionBackup.h"
 
 void signalHandler( int signum ) {
@@ -58,8 +58,6 @@ int main() {
     }
     catch (...) {
         std::cerr << "Termination due to an unexpected error" << std::endl;
-
-        // some rescue actions (maybe)
 
         return EXIT_FAILURE;
     }

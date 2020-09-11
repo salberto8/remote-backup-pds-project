@@ -28,6 +28,7 @@ namespace configuration
  */
 bool configuration::load_config_file(const std::string &config_file)
 {
+    // load the home path of the Unix user
     std::string home_dir;
     if ((getenv("HOME")) != NULL)
         home_dir = (getenv("HOME"));

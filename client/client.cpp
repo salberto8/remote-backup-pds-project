@@ -2,6 +2,7 @@
 // Created by giacomo on 03/08/20.
 //
 
+#include <iostream>
 #include <thread>
 #include <nlohmann/json.hpp>
 #include <boost/asio/signal_set.hpp>
@@ -10,6 +11,7 @@
 #include "backup.h"
 #include "configuration.h"
 #include "Session.h"
+#include "ExceptionBackup.h"
 
 // define the target for using the server API
 #define api_probefile "/probefile/"
@@ -20,7 +22,6 @@
 enum TargetType { probefolder, probefile, backupfile, backupfolder, delete_ };
 
 
-
 using json = nlohmann::json;
 
 void replaceSpaces(std::string &str);
@@ -29,12 +30,19 @@ bool send_request(http::verb method, const std::string &abs_path, TargetType typ
 
 void replaceSpaces(std::string &str) {
     int pos;
-
     while ((pos=str.find(" "))!= std::string::npos){
         str.replace(pos, 1, "%20");
     }
 }
 
+/**
+ * send requests to the server, for all requests except the probe_file which is different
+ *
+ * @param method of the request
+ * @param abs_path absolute path of the file or folder
+ * @param type of the request
+ * @return true if result is ok, false if it is not_found, otherwise throws an ExceptionBackup
+ */
 bool send_request(http::verb method, const std::string &abs_path, TargetType type) {
     http::request<http::string_body> req;
     http::response<http::string_body> res;
@@ -93,6 +101,12 @@ bool send_request(http::verb method, const std::string &abs_path, TargetType typ
         throw (ExceptionBackup(res.body(), res.result()));
 }
 
+/**
+ * send a probe_file request to the server (asynchronously)
+ *
+ * @param abs_path absolute path of the file to be checked
+ * @return true if the file is found, false if it is not found, otherwise throws an ExceptionBackup
+ */
 bool probe_file(const std::string& abs_path) {
     http::request<http::string_body> req;
     http::response<http::string_body> res;
@@ -142,23 +156,47 @@ bool probe_file(const std::string& abs_path) {
     }
 }
 
+/**
+ * send a backup_file request to the server and can throws an ExceptionBackup
+ *
+ * @param abs_path absolute path of the file to be backed up
+ */
 void backup_file(const std::string& abs_path) {
     send_request(http::verb::post, abs_path, backupfile);
 }
 
+/**
+ * send a probe_folder request to the server
+ *
+ * @param abs_path absolute path of the folder to be checked
+ * @return true if the folder is found, false if it is not found, otherwise throws an ExceptionBackup
+ */
 bool probe_folder(const std::string& abs_path) {
     return send_request(http::verb::post, abs_path, probefolder);
 }
 
+/**
+ * send a backup_folder request to the server and can throws an ExceptionBackup
+ *
+ * @param abs_path absolute path of the folder to be backed up
+ */
 void backup_folder(const std::string& abs_path) {
     send_request(http::verb::post, abs_path, backupfolder);
 }
 
+/**
+ * send a delete_path request to the server and can throws an ExceptionBackup
+ *
+ * @param abs_path absolute path of the file/folder to be eliminated
+ */
 void delete_path(const std::string& abs_path) {
     // the delete method is valid for both folders and files
     send_request(http::verb::delete_, abs_path, delete_);
 }
 
+/**
+ * manage authentication to the server and can throws an ExceptionBackup
+ */
 void authenticateToServer(){
     http::request<http::string_body> req;
     http::response<http::string_body> res;
@@ -203,6 +241,9 @@ void authenticateToServer(){
     }
 }
 
+/**
+ * send a logout to the server and can throws an ExceptionBackup
+ */
 void logout(){
     http::request<http::string_body> req;
     http::response<http::string_body> res;

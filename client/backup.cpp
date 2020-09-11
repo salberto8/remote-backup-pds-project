@@ -16,7 +16,12 @@
 namespace fs = std::filesystem;
 namespace base64 = boost::beast::detail::base64;
 
-
+/**
+ * compute the SHA256 digest of a file
+ *
+ * @param path of the file to compute the digest
+ * @return the digest in hexadecimal format, a empty optional if file doesn't exist or a error occurred
+ */
 std::string calculate_digest(std::string path) {
     EVP_MD_CTX *md;
     unsigned char md_value[EVP_MAX_MD_SIZE];
@@ -56,6 +61,12 @@ std::string calculate_digest(std::string path) {
     return digest;
 }
 
+/**
+ * encode a file in base64
+ *
+ * @param path of the file to encode
+ * @return the file encoded in base64 (ASCII string format)
+ */
 std::unique_ptr<char[]> encode(const std::string &path) {
     std::size_t original_len = fs::file_size(path);
     std::size_t encoded_len = base64::encoded_size(original_len);
@@ -74,6 +85,12 @@ std::unique_ptr<char[]> encode(const std::string &path) {
     return encoded_file;
 }
 
+/**
+ * get all folders and files of a directory
+ *
+ * @param path of the folder to be scanned
+ * @return directory's children file / folder set
+ */
 std::set<std::string> get_children(const std::string &path) {
     std::set<std::string> set;
     for(const fs::directory_entry& entry : fs::directory_iterator(path)) {

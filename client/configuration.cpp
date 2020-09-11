@@ -3,7 +3,6 @@
 //
 
 #include <iostream>
-#include <pwd.h>
 #include <fstream>
 #include <boost/program_options.hpp>
 
@@ -22,16 +21,16 @@ namespace configuration
 }
 
 
-
-bool configuration::load_config_file(const std::string &config_file) {
-    std::string home_dir;
-    if ((getenv("HOME")) != NULL)
-        home_dir = (getenv("HOME"));
-    else
-        home_dir = getpwuid(getuid())->pw_dir;
+bool configuration::load_config_file(const std::string &config_file)
+{
+    // load the home path of the Windows or Unix user
+    #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+    const std::string home_dir = (getenv("HOMEPATH"));
+    #else
+    const std::string home_dir = (getenv("HOME"));
+    #endif
 
     const std::string conf_path = home_dir + "/" + config_file;
-
 
     std::ifstream conf_file {conf_path};
 

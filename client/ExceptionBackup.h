@@ -13,47 +13,29 @@
 
 namespace http = boost::beast::http;       // from <boost/beast/http.hpp>
 
+ enum ErrorType {
+     async_resolver_error,
+     async_connection_error,
+     async_write_error,
+     async_read_error,
+     async_shutdown_error,
+     http_error
+ };
 
-/**  ERROR_NUMBER:
- *   1) async resolver error
- *   2) async connection error
- *   3) async write error
- *   4) async read error
- *   5) async shutdown error
- */
- enum ErrorType {async_resolver_error,async_connection_error,async_write_error,async_read_error,async_shutdown_error,http_error};
-/*
-#define async_resolver_error 1
-#define async_connection_error 2
-#define async_write_error 3
-#define async_read_error 4
-#define async_shutdown_error 5
-*/
-
-/**  ERROR_CATEGORY:
- *   0)  async error
- *   10) http error
- */
- /*
-#define async_error 0
-#define http_error 10
-*/
 
 class ExceptionBackup: virtual public std::exception {
 protected:
-    /*
-    int error_number;               ///< Error number
-    int error_category;             ///< Error category
-    */
-    std::string error_message;      ///< Error message
-
     ErrorType error_type;
     http::status http_error_number;
+    std::string error_message;
+
 public:
 
-    /** Constructor (C++ STL string, int).
+    /**
+     * Constructor (C++ STL string, ErrorType)
+     *
      *  @param msg The error message
-     *  @param err_num Error number
+     *  @param type Async error type
      */
     explicit
     ExceptionBackup(std::string  msg, ErrorType type):
@@ -62,17 +44,27 @@ public:
             http_error_number(http::status::unknown)
     {}
 
+    /**
+     * Contructor (C++ STL string, boost::beast::http::status)
+     *
+     * @param msg The error message
+     * @param http_error_number HTTP error type
+     */
     explicit
     ExceptionBackup(std::string  msg, http::status http_error_number):
             error_type(http_error),
             error_message(std::move(msg)),
             http_error_number(http_error_number)
     {}
-    /** Destructor.
+
+    /**
+     * Destructor
      */
     ~ExceptionBackup() noexcept override = default;
 
-    /** Returns a pointer to the (constant) error description.
+    /**
+     * Returns a pointer to the (constant) error description.
+     *
      *  @return A pointer to a const char*. The underlying memory
      *  is in possession of the Except object. Callers must
      *  not attempt to free the memory.
@@ -81,8 +73,9 @@ public:
         return error_message.c_str();
     }
 
-
-
+    /**
+     * @return The int value which indicates a ErrorType or a http_error
+     */
     virtual int getErrorNumber() const noexcept {
         if(error_type == http_error)
             return static_cast<int>(http_error_number);
@@ -90,10 +83,16 @@ public:
             return error_type;
     }
 
+    /**
+     * @return The async ErrorType of the exception
+     */
     virtual ErrorType getErrorType() const noexcept {
         return error_type;
     }
 
+    /**
+     * @return The HTTP error number of the exception
+     */
     virtual int getHttpError() const noexcept {
         return static_cast<int>(http_error_number);
     }

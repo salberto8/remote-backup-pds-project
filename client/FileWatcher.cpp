@@ -15,7 +15,7 @@ std::mutex om;
 
 void myout(std::string msg){
     std::lock_guard og(om);
-    std::cout<<msg<<std::endl;
+    std::clog<<msg<<std::endl;
 }
 
 
@@ -38,7 +38,7 @@ public:
         std::unique_lock lock(qm);
         while (true){
 
-            if(jobs.size()>0){
+            if(!jobs.empty()){
                 T job = jobs.front();
                 jobs.pop_front();
                 return job;
@@ -46,7 +46,7 @@ public:
             if(!active){
                 return std::optional<T>();
             }
-            not_empty.wait(lock, [this](){ return this->jobs.size()>0 || !this->active;});
+            not_empty.wait(lock, [this](){ return !this->jobs.empty() || !this->active;});
         }
     }
 
@@ -56,9 +56,9 @@ public:
         not_empty.notify_all();
     }
 
-    int size(){
-        return jobs.size();
-    }
+//    int size(){
+//        return jobs.size();
+//    }
 };
 
 FileWatcher::FileWatcher(const std::string& path_to_watch, std::chrono::duration<int, std::milli> delay)
@@ -92,7 +92,7 @@ void FileWatcher::initialization() {
     std::atomic<int> count_leaves(0);
 
     // delete any files or folders no longer present in the root folder
-    probe_folder(path_to_watch);
+    // probe_folder(path_to_watch);
 
     // erase all the elements in the path_ map
     paths_.clear();
@@ -115,9 +115,9 @@ void FileWatcher::initialization() {
                     // counter of direct child-directories of the current directory
                     int directories = 0;
 
-                    myout("sending probe folder of " + path_entry.string());
+                    // myout("sending probe folder of " + path_entry.string());
                     if(!probe_folder(path_entry.string())) {
-                        myout("probe failed, sending backup folder " + path_entry.string());
+                        // myout("probe failed, sending backup folder " + path_entry.string());
                         backup_folder(path_entry.string());
                     }
                     // add the folder to the paths_ unordered_map or just update last write time if already present
@@ -126,11 +126,11 @@ void FileWatcher::initialization() {
                     mutex_paths_.unlock();
 
                     // iterate on all direct children of the directory
-                    for (auto p : fs::directory_iterator(path_entry)) {
+                    for (const auto& p : fs::directory_iterator(path_entry)) {
                         if (p.is_regular_file()) {
-                            myout("sending probe file of " + p.path().string());
+                            // myout("sending probe file of " + p.path().string());
                             if (!probe_file(p.path().string())) {
-                                myout("probe failed, sending backup file " + p.path().string());
+                                // myout("probe failed, sending backup file " + p.path().string());
                                 backup_file(p.path().string());
                             }
                             // add the file to the paths_ unordered_map or just update last write time
@@ -159,30 +159,27 @@ void FileWatcher::initialization() {
                         jobs.ended();
                     }
                 } else {
-                    myout("consumer " + std::to_string(i) + " terminated");
+                    // myout("consumer " + std::to_string(i) + " terminated");
                     break;
                 }
             }
         }));
     }
 
-
     for (auto &t: threads_) {
         if(t.joinable()) t.join();
     }
 
-    myout("consumer terminati job ancora aperti: " + std::to_string(jobs.size()));
-
+    // myout("consumer terminati job ancora aperti: " + std::to_string(jobs.size()));
 
 }
 
 bool FileWatcher::check_connection_and_retry() {
     while(retry) {
-        // sleep 30 seconds (+ potentially another 30 seconds of connection timeout)
+        // sleep 30 seconds (+ potentially another 60 seconds of connection timeout)
         std::this_thread::sleep_for(std::chrono::seconds(30));
 
         try {
-            //authenticateToServer();
             // the server connection is active
             initialization();
             return true;
@@ -207,7 +204,7 @@ void FileWatcher::start() {
             while (it != paths_.end()) {
                 // file / folder elimination
                 if (!fs::exists(it->first)) {
-                    myout("delete path of " + it->first);
+                    // myout("delete path of " + it->first);
                     // delete from server
                     delete_path(it->first);
 
@@ -231,11 +228,11 @@ void FileWatcher::start() {
                 if (!contains(path_entry.path().string())) {
 
                     if(path_entry.is_directory()) {
-                        myout("backup folder " + path_entry.path().string());
+                        // myout("backup folder " + path_entry.path().string());
                         backup_folder(path_entry.path().string());
                     }
                     else if(path_entry.is_regular_file()) {
-                        myout("backup file " + path_entry.path().string());
+                        // myout("backup file " + path_entry.path().string());
                         backup_file(path_entry.path().string());
                     }
                     paths_[path_entry.path().string()] = current_file_last_write_time;
@@ -250,7 +247,7 @@ void FileWatcher::start() {
                             backup_folder(path_entry.path().string());
                         }*/
                         if(path_entry.is_regular_file()) {
-                            myout("file modified: sending delete and backup " + path_entry.path().string());
+                            // myout("file modified: sending delete and backup " + path_entry.path().string());
                             delete_path(path_entry.path().string());
                             backup_file(path_entry.path().string());
                         }
@@ -263,7 +260,7 @@ void FileWatcher::start() {
             // server error or connection lost
             std::cerr << e.what() << ". Error number " << e.getErrorNumber() << std::endl;
             if(check_connection_and_retry())
-                std::cout << "Connection is back" << std::endl;
+                myout("Connection is back");
         }
     }
 }
