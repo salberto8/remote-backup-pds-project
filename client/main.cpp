@@ -12,8 +12,12 @@ void signalHandler( int signum ) {
     std::cout << ss.str();
 
     // if the client was authenticated, send logout request to server before exit
-    if (!configuration::token.empty())
-        logout();
+    try{
+        if (!configuration::token.empty())
+            logout();
+    } catch (const ExceptionBackup& e) {
+        std::cerr << e.what() << ". Error number " << e.getErrorNumber() << std::endl;
+    }
 
     exit(signum);
 }
@@ -59,8 +63,6 @@ int main() {
 
         return EXIT_FAILURE;
     }
-
-   // t.join();
 
     return 0;
 }
